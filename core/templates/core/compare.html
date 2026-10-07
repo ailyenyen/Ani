@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Compare Markets{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Compare Markets</h1>
+  <p class="lead">See where your crop is priced highest.</p>
+</section>
+
+<form class="card filters" method="get" action="{% url 'compare' %}">
+  <div class="filter-row two">
+    <div class="field">
+      <label for="c-crop">Crop</label>
+      <select id="c-crop" name="crop" data-autosubmit>
+        {% for c in crops %}<option value="{{ c.slug }}"{% if crop and c.id == crop.id %} selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="c-location">Location</label>
+      {% include "core/partials/location_select.html" with select_id="c-location" allow_all=False %}
+    </div>
+    <button class="btn btn-primary" type="submit">{% icon 'compare' 20 %} Compare</button>
+  </div>
+</form>
+
+{% if best %}
+  <section class="best-callout" aria-live="polite">
+    <span class="best-icon">{% icon 'check' 28 %}</span>
+    <div>
+      <p class="eyebrow">Highest price for {{ crop.name }} in {{ location }}</p>
+      <p class="best-text">{{ best.market.name }}: <span class="price">{{ best.price|peso }}/{{ crop.unit }}</span></p>
+      <p class="muted" style="margin:0">Source: {{ best.source }} · {{ best.date|updated_label }}</p>
+    </div>
+  </section>
+
+  {% if chart and comparisons|length > 1 %}
+  <section class="card" aria-labelledby="chart-title">
+    <h2 class="chart-title" id="chart-title">{{ chart.title }}, {{ location }}</h2>
+    <p class="chart-note">Price per kilo. The dark green bar is the highest price.</p>
+    <div class="chart-box" style="height: {{ chart_height }}px">
+      <canvas data-chart="bars" data-source="compare-chart-data" role="img"
+        aria-label="{{ chart.title }}. Highest: {{ best.market.name }} at {{ best.price|peso }} per kilo."></canvas>
+    </div>
+    {{ chart|json_script:"compare-chart-data" }}
+  </section>
+  {% endif %}
+
+  <section class="card" aria-labelledby="list-title">
+    <h2 id="list-title">All Markets</h2>
+    <ul class="compare-list">
+      {% for c in comparisons %}
+        <li{% if c.is_best %} class="is-best"{% endif %}>
+          <div class="cl-name">
+            <strong>{{ c.row.market.name }}</strong>
+            <span class="muted">Source: {{ c.row.source }} · {{ c.row.date|updated_label }}</span>
+          </div>
+          <div class="cl-right">
+            <span class="price-md">{{ c.row.price|peso }}<span class="unit">/{{ crop.unit }}</span></span>
+            {% if c.is_best %}<span class="tag tag-best">{% icon 'check' 16 %} Highest price</span>
+            {% else %}<span class="cl-diff">{{ c.difference|peso }} less</span>{% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="bottom-cta" style="display:flex;flex-wrap:wrap;gap:12px">
+    <a class="btn btn-primary" href="{% url 'alert_new' %}?crop={{ crop.slug }}">{% icon 'bell' 20 %} Set Price Alert</a>
+    <a class="btn btn-secondary" href="{% url 'crop_detail' crop.slug %}?location={{ location|urlencode }}">{% icon 'trend' 20 %} See {{ crop.name }} price trend</a>
+  </div>
+{% else %}
+  <div class="card empty-state">
+    <span class="empty-emoji" aria-hidden="true">{{ crop.icon|default:"🌾" }}</span>
+    <h2>No recent prices to compare</h2>
+    <p>We don't have recent {{ crop.name }} prices in {{ location }}. Try another crop or location.</p>
+  </div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if chart %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}

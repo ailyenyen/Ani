@@ -1,0 +1,20 @@
+{% load ani_tags %}
+<ul class="price-list">
+  {% for s in summaries %}{% with row=s.headline %}
+    <li>
+      <a class="price-item" href="{% url 'crop_detail' s.crop.slug %}{% if row.market.location %}?location={{ row.market.location|urlencode }}{% endif %}">
+        <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
+        <span class="pi-name">
+          <strong>{{ s.crop.name }}</strong>
+          <span class="muted">{{ row.market.name }} · {{ row.market.location }}</span>
+        </span>
+        <span class="pi-right">
+          <span class="price-md">{{ row.price|peso }}<span class="unit">/{{ s.crop.unit }}</span></span>
+          {% include "core/partials/change.html" with row=row %}
+        </span>
+        <span class="pi-updated">{{ row.date|updated_label }}</span>
+        <span class="pi-chevron">{% icon 'chevron-right' %}</span>
+      </a>
+    </li>
+  {% endwith %}{% endfor %}
+</ul>

@@ -1,0 +1,4 @@
+<select id="{{ select_id }}" name="location" data-autosubmit>
+  {% if allow_all %}<option value="all"{% if not location %} selected{% endif %}>All Locations</option>{% endif %}
+  {% for loc in locations %}<option value="{{ loc }}"{% if loc == location %} selected{% endif %}>{{ loc }}</option>{% endfor %}
+</select>

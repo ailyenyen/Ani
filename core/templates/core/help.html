@@ -1,0 +1,84 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Help &amp; Support{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>How can we help?</h1>
+  <p class="lead">Simple answers for using Ani.</p>
+</section>
+
+<div class="help-grid">
+  <section class="card">
+    <h2>How do I check a crop's price?</h2>
+    <ol class="steps">
+      <li><span>Tap <strong>Market Prices</strong></span></li>
+      <li><span>Choose your crop</span></li>
+      <li><span>Select your location</span></li>
+    </ol>
+    <a class="btn btn-secondary btn-small" href="{% url 'prices' %}">{% icon 'wheat' 20 %} Go to Market Prices</a>
+  </section>
+
+  <section class="card">
+    <h2>How do I compare markets?</h2>
+    <ol class="steps">
+      <li><span>Tap <strong>Compare Markets</strong></span></li>
+      <li><span>Choose your crop</span></li>
+      <li><span>Select your location</span></li>
+      <li><span>Look at the prices. The highest price is shown first.</span></li>
+    </ol>
+    <a class="btn btn-secondary btn-small" href="{% url 'compare' %}">{% icon 'compare' 20 %} Go to Compare Markets</a>
+  </section>
+
+  <section class="card">
+    <h2>How do price alerts work?</h2>
+    <p>Ani will send you a message when your chosen crop reaches the price you set.</p>
+    <ol class="steps">
+      <li><span>Tap <strong>Price Alerts</strong>, then <strong>Add Price Alert</strong></span></li>
+      <li><span>Choose a crop and type your price</span></li>
+      <li><span>Choose <strong>above</strong> or <strong>below</strong></span></li>
+    </ol>
+    <a class="btn btn-secondary btn-small" href="{% url 'alert_new' %}">{% icon 'bell' 20 %} Add Price Alert</a>
+  </section>
+
+  <section class="card">
+    <h2>What do ↑ and ↓ mean?</h2>
+    <p><span class="change change-up">↑ 5.2%</span> means the price is <strong>5.2% higher</strong> than about one week ago.</p>
+    <p><span class="change change-down">↓ 1.5%</span> means the price is <strong>1.5% lower</strong> than about one week ago.</p>
+    <p class="muted" style="margin:0">All prices are in pesos per kilo (₱/kg).</p>
+  </section>
+</div>
+
+<section class="card" aria-labelledby="sources-title">
+  <h2 id="sources-title">Where do the prices come from?</h2>
+  <p>Ani collects prices from public sources. Every price in Ani shows its source, so you know where it came from.</p>
+  <ul>
+    <li><strong>DA Bantay Presyo</strong>: price monitoring by the Department of Agriculture</li>
+    <li><strong>Kadiwa</strong>: Kadiwa center price lists</li>
+    <li><strong>Local market bulletins</strong>: prices posted by public and local markets</li>
+  </ul>
+  <p class="muted">Prices are a guide. The price you are offered can be different because of quality, size and quantity.</p>
+  {% if runs %}
+    <h3>Latest updates</h3>
+    <div style="overflow-x:auto">
+      <table class="source-table">
+        <thead><tr><th scope="col">Source</th><th scope="col">Last checked</th><th scope="col">Result</th></tr></thead>
+        <tbody>
+          {% for run in runs %}
+            <tr>
+              <td>{{ run.source }}</td>
+              <td>{{ run.finished_at|default:run.started_at|date:"M j, Y g:i A" }}</td>
+              <td>{% if run.status == 'failed' %}Could not update. We will try again.{% else %}{{ run.records_saved|add:run.records_updated }} new price{{ run.records_saved|add:run.records_updated|pluralize }}{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Still need help?</h2>
+  <p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">{% icon 'mail' %} Email us at <a href="mailto:{{ support_email }}"><strong>{{ support_email }}</strong></a></p>
+  <p class="muted" style="margin:0">You can also ask your Municipal Agriculture Office for help with local prices.</p>
+</section>
+{% endblock %}

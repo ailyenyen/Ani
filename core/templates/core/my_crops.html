@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}My Crops{% endblock %}
+{% block content %}
+<div class="page-head-row">
+  <div>
+    <h1>My Crops</h1>
+    <p class="lead">The crops you check often, with their latest price{% if current_user.location %} in {{ current_user.location }}{% endif %}.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'my_crops_add' %}">{% icon 'plus' 22 %} Add Crop</a>
+</div>
+
+{% if items %}
+  <ul class="crop-cards">
+    {% for item in items %}{% with crop=item.saved.crop s=item.summary %}
+      <li>
+        <div class="crop-card">
+          <div class="cc-head">
+            <span class="crop-icon" aria-hidden="true">{{ crop.icon }}</span>
+            <div><h2>{{ crop.name }}</h2><span class="muted">{{ crop.english_name }}</span></div>
+          </div>
+          {% if s %}
+            <p class="price-big">{{ s.headline.price|peso }}<span class="unit">/{{ crop.unit }}</span></p>
+            <p class="source-line">{% icon 'shield' 18 %} Source: {{ s.headline.source }} · {{ s.headline.market.location }}</p>
+            <p class="cc-meta">{% include "core/partials/change.html" with row=s.headline %}<span class="muted">{{ s.headline.date|updated_label }}</span></p>
+          {% else %}
+            <p class="muted" style="margin-top:12px">No recent price in your area yet.</p>
+          {% endif %}
+          <div class="cc-actions">
+            <a class="btn btn-secondary btn-small" href="{% url 'crop_detail' crop.slug %}">{% icon 'trend' 20 %} View Price</a>
+            <form method="post" action="{% url 'my_crops_remove' crop.slug %}" data-confirm="Remove {{ crop.name }} from My Crops?">{% csrf_token %}
+              <button class="btn btn-text btn-danger" type="submit">{% icon 'trash' 20 %} Remove</button>
+            </form>
+          </div>
+        </div>
+      </li>
+    {% endwith %}{% endfor %}
+  </ul>
+{% else %}
+  <div class="card empty-state">
+    <span class="empty-emoji" aria-hidden="true">🌱</span>
+    <h2>You have not saved any crops yet</h2>
+    <p>Save the crops you grow, and their prices will be on your Home page.</p>
+    <a class="btn btn-primary" href="{% url 'my_crops_add' %}">{% icon 'plus' 22 %} Add Crop</a>
+  </div>
+{% endif %}
+{% endblock %}

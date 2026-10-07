@@ -1,0 +1,15 @@
+# PostgreSQL for local development:  docker compose up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ani
+      POSTGRES_USER: ani
+      POSTGRES_PASSWORD: ani
+    ports:
+      - "5432:5432"
+    volumes:
+      - ani_pgdata:/var/lib/postgresql/data
+
+volumes:
+  ani_pgdata:

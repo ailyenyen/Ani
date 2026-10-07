@@ -1,0 +1,82 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>{% greeting %}, {% if current_user %}{{ current_user.first_name }}{% else %}Farmer{% endif %}!</h1>
+  <p class="lead">Here are the latest crop prices {% if location %}in {{ location }}{% else %}in all areas{% endif %}.</p>
+  <form class="location-bar" method="get" action="{% url 'home' %}">
+    {% icon 'pin' %}
+    <label for="home-location">Show prices for</label>
+    {% include "core/partials/location_select.html" with select_id="home-location" allow_all=True %}
+    <button class="btn btn-secondary btn-small js-hide" type="submit">Show</button>
+  </form>
+</section>
+
+<section class="quick-actions" aria-label="What would you like to do?">
+  <a class="quick-action" href="{% url 'prices' %}">
+    <span class="qa-icon">{% icon 'wheat' 30 %}</span>
+    <span class="qa-text"><strong>Check Prices</strong><span>See today's crop prices</span></span>
+  </a>
+  <a class="quick-action" href="{% url 'compare' %}">
+    <span class="qa-icon">{% icon 'compare' 30 %}</span>
+    <span class="qa-text"><strong>Compare Markets</strong><span>Find who pays the most</span></span>
+  </a>
+  <a class="quick-action alt" href="{% url 'alert_new' %}">
+    <span class="qa-icon">{% icon 'bell' 30 %}</span>
+    <span class="qa-text"><strong>Set Price Alert</strong><span>Get a message when prices change</span></span>
+  </a>
+</section>
+
+{% if featured %}{% with row=featured.headline %}
+<section class="card featured" aria-labelledby="featured-title">
+  <div>
+    <p class="eyebrow">{% if has_saved %}Your crop{% else %}Featured crop{% endif %}</p>
+    <h2 id="featured-title"><span class="crop-icon" aria-hidden="true">{{ row.crop.icon }}</span> {{ row.crop.name }}</h2>
+    <p class="price-big">{{ row.price|peso }}<span class="unit">/{{ row.crop.unit }}</span></p>
+    <p>{% include "core/partials/change.html" with row=row long=True %}</p>
+    <p class="source-line">{% icon 'shield' 18 %} Source: {{ row.source }} · {{ row.market.location }} · {{ row.date|updated_label }}</p>
+    <a class="btn btn-primary" href="{% url 'crop_detail' row.crop.slug %}?location={{ row.market.location|urlencode }}">View Price {% icon 'chevron-right' 20 %}</a>
+  </div>
+  {% if chart and chart.values|length > 1 %}
+  <div class="featured-chart">
+    <h3 class="chart-title">{{ chart.title }}</h3>
+    <p class="chart-note">{{ row.market.name }}, {{ row.market.location }}</p>
+    <div class="chart-box">
+      <canvas data-chart="line" data-source="featured-chart-data" role="img"
+        aria-label="{{ chart.title }}: from {{ chart.values|first|peso }} to {{ chart.values|last|peso }} per kilo."></canvas>
+    </div>
+    {{ chart|json_script:"featured-chart-data" }}
+  </div>
+  {% endif %}
+</section>
+{% endwith %}{% endif %}
+
+<section aria-labelledby="latest-title">
+  <div class="section-head">
+    <h2 id="latest-title">{% if has_saved %}Your Crops' Latest Prices{% else %}Latest Prices{% endif %}</h2>
+    <a class="link-more" href="{% url 'prices' %}">See all prices {% icon 'chevron-right' 20 %}</a>
+  </div>
+  {% if latest %}
+    {% include "core/partials/price_list.html" with summaries=latest %}
+  {% else %}
+    <div class="card empty-state">
+      <span class="empty-emoji" aria-hidden="true">🌾</span>
+      <h3>No prices yet</h3>
+      <p>Prices will appear here as soon as they are collected. Please check again later.</p>
+    </div>
+  {% endif %}
+  {% if last_update %}<p class="result-line" style="margin-top:12px">Latest price data: {{ last_update|nice_date }}</p>{% endif %}
+</section>
+
+{% if not current_user %}
+<section class="card" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
+  <div>
+    <h2 style="margin-bottom:4px">Save your crops and get price alerts</h2>
+    <p class="muted" style="margin:0">Create a free account. It takes less than a minute.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'signup' %}">Create free account</a>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if chart %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}

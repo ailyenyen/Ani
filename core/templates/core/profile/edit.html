@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}My Information{% endblock %}
+{% block content %}
+<div class="narrow">
+  <a class="back-link" href="{% url 'profile' %}">{% icon 'chevron-left' 20 %} Back to Profile</a>
+  <section class="page-head"><h1>My Information</h1><p class="lead">Your location is used to show prices near you.</p></section>
+  <form class="card" method="post" novalidate>{% csrf_token %}
+    {% for field in form %}{% include "core/partials/field.html" %}{% endfor %}
+    <button class="btn btn-primary btn-block" type="submit">{% icon 'check' 22 %} Save</button>
+  </form>
+</div>
+{% endblock %}

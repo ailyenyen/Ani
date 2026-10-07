@@ -1,0 +1,75 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Price Alerts{% endblock %}
+{% block content %}
+<div class="page-head-row">
+  <div>
+    <h1>Price Alerts</h1>
+    <p class="lead">Get notified when your target price is reached.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'alert_new' %}">{% icon 'plus' 22 %} Add Price Alert</a>
+</div>
+
+{% if notifications %}
+<section aria-labelledby="notif-title">
+  <h2 id="notif-title">Messages for you</h2>
+  <ul class="notif-list">
+    {% for n in notifications %}
+      <li class="notif{% if not n.is_read %} is-new{% endif %}">
+        {% icon 'bell' 22 %}
+        <div class="notif-body">
+          <strong>{{ n.title }}</strong>
+          <p>{{ n.message }}</p>
+          <span class="notif-meta">
+            {% if not n.is_read %}<span class="tag tag-new">New</span>{% endif %}
+            {{ n.created_at|date:"M j, g:i A" }}
+          </span>
+        </div>
+        {% if n.link %}<a class="btn btn-secondary btn-small" href="{{ n.link }}">View price</a>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section aria-labelledby="alerts-title">
+  <h2 id="alerts-title">Your alerts</h2>
+  {% if items %}
+    <div class="alert-list">
+      {% for item in items %}{% with a=item.alert %}
+        <article class="card alert-card{% if not a.active %} is-off{% endif %}">
+          <div class="alert-main">
+            <span class="crop-icon" aria-hidden="true">{{ a.crop.icon }}</span>
+            <div>
+              <h3>{{ a.crop.name }}</h3>
+              <p class="alert-text">{{ item.text }}</p>
+              {% if item.current %}
+                <p class="alert-now">Price now: <strong>{{ item.current.headline.price|peso }}/{{ a.crop.unit }}</strong> at {{ item.current.headline.market.name }}</p>
+              {% endif %}
+            </div>
+          </div>
+          <div class="alert-actions">
+            <form method="post" action="{% url 'alert_toggle' a.id %}">{% csrf_token %}
+              <button class="toggle{% if a.active %} is-on{% endif %}" type="submit"
+                aria-label="{{ a.crop.name }} alert is {{ a.active|yesno:'on,off' }}. Tap to turn it {{ a.active|yesno:'off,on' }}.">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-label">{{ a.active|yesno:"ON,OFF" }}</span>
+              </button>
+            </form>
+            <form method="post" action="{% url 'alert_delete' a.id %}" data-confirm="Delete the {{ a.crop.name }} alert?">{% csrf_token %}
+              <button class="btn btn-text btn-danger" type="submit">{% icon 'trash' 20 %} Delete</button>
+            </form>
+          </div>
+        </article>
+      {% endwith %}{% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <span class="empty-emoji" aria-hidden="true">🔔</span>
+      <h3>You have no price alerts yet</h3>
+      <p>Tell Ani the price you are waiting for, and we will send you a message when it happens.</p>
+      <a class="btn btn-primary" href="{% url 'alert_new' %}">{% icon 'plus' 22 %} Add Price Alert</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

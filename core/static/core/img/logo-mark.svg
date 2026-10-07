@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ani">
+  <defs>
+    <clipPath id="ani-a">
+      <path d="M32 5c-3.2 0-5.4 1.9-6.8 4.9L9.3 50.7C8 54 10 57 13.5 57h37c3.5 0 5.5-3 4.2-6.3L38.8 9.9C37.4 6.9 35.2 5 32 5Z"/>
+    </clipPath>
+  </defs>
+  <path d="M32 5c-3.2 0-5.4 1.9-6.8 4.9L9.3 50.7C8 54 10 57 13.5 57h37c3.5 0 5.5-3 4.2-6.3L38.8 9.9C37.4 6.9 35.2 5 32 5Z" fill="#185B43"/>
+  <circle cx="32" cy="27" r="7.5" fill="#FBC02D"/>
+  <g clip-path="url(#ani-a)">
+    <path d="M0 47c14-10 32-12 64-6v23H0Z" fill="#2E7D32"/>
+    <path d="M2 52.5c15-8.5 32-10 60-5" stroke="#FAFAF7" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M4 58.5c15-7.5 31-9 58-4.5" stroke="#A5D6A7" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M4 50c-1.5-9 3.5-16 12.5-17.5 1.5 9-3.5 16-12.5 17.5Z" fill="#2E7D32"/>
+  <path d="M5 49c3-4.5 6-8.5 10.5-14" stroke="#A5D6A7" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+</svg>

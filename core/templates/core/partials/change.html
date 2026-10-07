@@ -1,0 +1,1 @@
+{% load ani_tags %}<span class="change change-{{ row.direction|default:'none' }}" title="{{ row|change_words }}"><span aria-hidden="true">{{ row|change_text }}{% if long and row.direction == 'up' or long and row.direction == 'down' %} from last week{% endif %}</span><span class="sr-only">{{ row|change_words }}</span></span>

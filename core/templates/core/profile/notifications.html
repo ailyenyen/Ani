@@ -1,0 +1,73 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Notification Settings{% endblock %}
+{% block content %}
+<div class="narrow">
+  <a class="back-link" href="{% url 'profile' %}">{% icon 'chevron-left' 20 %} Back to Profile</a>
+  <section class="page-head"><h1>Notification Settings</h1><p class="lead">Choose how Ani tells you about your price alerts.</p></section>
+
+  <section class="card">
+    <p style="display:flex;gap:10px;align-items:flex-start">{% icon 'check' %} <span><strong>Inside Ani:</strong> every alert always appears on your Price Alerts page.</span></p>
+    <form method="post">{% csrf_token %}
+      <label class="checkbox-row">
+        <input type="checkbox" name="push_enabled"{% if current_user.push_enabled %} checked{% endif %}>
+        <span><strong>Also send alerts to my phone or computer</strong><span class="muted">You get a message even when Ani is closed.</span></span>
+      </label>
+      <button class="btn btn-primary" type="submit">{% icon 'check' 22 %} Save</button>
+    </form>
+  </section>
+
+  {% if web_push_enabled %}
+    <section class="card">
+      <h2>This phone or computer</h2>
+      <p class="muted">Devices connected: {{ device_count }}</p>
+      <button class="btn btn-secondary" type="button" id="enable-push">{% icon 'phone' 22 %} Turn on notifications here</button>
+      <p class="hint" id="push-status" role="status" aria-live="polite"></p>
+    </section>
+  {% else %}
+    <section class="card">
+      <h2>Phone notifications</h2>
+      <p class="muted" style="margin:0">Phone notifications are not set up on this server yet. You will still see every alert inside Ani.</p>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}{% if web_push_enabled %}
+{{ firebase_config|json_script:"firebase-config" }}
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js" defer></script>
+<script defer>
+  window.addEventListener("load", function () {
+    var button = document.getElementById("enable-push");
+    var status = document.getElementById("push-status");
+    if (!button) return;
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      status.textContent = "This browser cannot show notifications. You will still see alerts inside Ani.";
+      button.disabled = true;
+      return;
+    }
+    button.addEventListener("click", function () {
+      status.textContent = "Please wait...";
+      var config = JSON.parse(document.getElementById("firebase-config").textContent);
+      firebase.initializeApp(config);
+      navigator.serviceWorker.register("{% url 'firebase_sw' %}").then(function (registration) {
+        return firebase.messaging().getToken({ vapidKey: "{{ vapid_key|escapejs }}", serviceWorkerRegistration: registration });
+      }).then(function (token) {
+        if (!token) throw new Error("no token");
+        var csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        return fetch("{% url 'register_device' %}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+          body: JSON.stringify({ token: token })
+        });
+      }).then(function (response) {
+        status.textContent = response.ok
+          ? "Done! Notifications are on for this device."
+          : "Something went wrong. Please try again.";
+      }).catch(function () {
+        status.textContent = "Notifications were not turned on. If you blocked them, allow notifications for this site in your browser settings.";
+      });
+    });
+  });
+</script>
+{% endif %}{% endblock %}

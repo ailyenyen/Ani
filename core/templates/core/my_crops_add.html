@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Add Crop{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'my_crops' %}">{% icon 'chevron-left' 20 %} Back to My Crops</a>
+<section class="page-head">
+  <h1>Add Crop</h1>
+  <p class="lead">Tap a crop to add it to My Crops.</p>
+</section>
+{% if crops %}
+  <div class="crop-choice-grid">
+    {% for crop in crops %}
+      <form method="post" action="{% url 'my_crops_add' %}" style="margin:0">{% csrf_token %}
+        <input type="hidden" name="crop" value="{{ crop.slug }}">
+        <button type="submit" class="choice-box" style="width:100%;font:inherit;cursor:pointer;text-align:left">
+          <span class="crop-icon" aria-hidden="true">{{ crop.icon }}</span>
+          <span class="choice-text"><strong>{{ crop.name }}</strong><span class="muted">{{ crop.english_name }}</span></span>
+          <span style="margin-left:auto;color:var(--green)">{% icon 'plus' 22 %}<span class="sr-only">Add {{ crop.name }}</span></span>
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty-state"><h2>You have saved every crop</h2><p>All crops in Ani are already in My Crops.</p></div>
+{% endif %}
+{% endblock %}

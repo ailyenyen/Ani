@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Add Price Alert{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'alerts' %}">{% icon 'chevron-left' 20 %} Back to Price Alerts</a>
+<section class="page-head">
+  <h1>Add Price Alert</h1>
+  <p class="lead">Answer 3 quick questions. We will send you a message when the price is reached.</p>
+</section>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.errors %}
+    <div class="form-errors" role="alert">
+      <p class="error" style="margin:0">{% icon 'info' 18 %} Please check the answers marked below.</p>
+    </div>
+  {% endif %}
+
+  <fieldset class="card step">
+    <legend><span class="step-num">1</span> What crop do you want to monitor?</legend>
+    {% for error in form.crop.errors %}<p class="error" style="margin-bottom:12px">{% icon 'info' 18 %} {{ error }}</p>{% endfor %}
+    <div class="crop-choice-grid">
+      {% for opt in crop_options %}
+        <label class="crop-choice">
+          <input type="radio" name="crop" value="{{ opt.crop.slug }}"
+            data-name="{{ opt.crop.name }}" data-price="{% if opt.current %}{{ opt.current.headline.price }}{% endif %}"
+            {% if form.crop.value == opt.crop.slug %}checked{% endif %}>
+          <span class="choice-box">
+            <span class="crop-icon" aria-hidden="true">{{ opt.crop.icon }}</span>
+            <span class="choice-text">
+              <span>{{ opt.crop.name }}</span>
+              {% if opt.current %}<span class="muted">Now {{ opt.current.headline.price|peso }}</span>{% endif %}
+            </span>
+          </span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="card step">
+    <legend><span class="step-num">2</span> What price are you watching for?</legend>
+    <label class="sr-only" for="target_price">Target price in pesos per kilo</label>
+    <div class="price-input">
+      <span class="prefix" aria-hidden="true">₱</span>
+      <input type="text" inputmode="decimal" id="target_price" name="target_price" autocomplete="off"
+        placeholder="0.00" value="{{ form.target_price.value|default_if_none:'' }}" aria-describedby="price-hint">
+      <span class="suffix">/ kg</span>
+    </div>
+    {% for error in form.target_price.errors %}<p class="error" style="margin-top:10px">{% icon 'info' 18 %} {{ error }}</p>{% endfor %}
+    <p class="hint" id="price-hint" data-price-hint>Choose a crop above to see its price right now.</p>
+  </fieldset>
+
+  <fieldset class="card step">
+    <legend><span class="step-num">3</span> When should we notify you?</legend>
+    {% for error in form.condition.errors %}<p class="error" style="margin-bottom:12px">{% icon 'info' 18 %} {{ error }}</p>{% endfor %}
+    <label class="radio-card">
+      <input type="radio" name="condition" value="above"{% if form.condition.value == 'above' %} checked{% endif %}>
+      <span><strong>Price goes above my target</strong><span class="muted">Useful when you are waiting to sell.</span></span>
+    </label>
+    <label class="radio-card">
+      <input type="radio" name="condition" value="below"{% if form.condition.value == 'below' %} checked{% endif %}>
+      <span><strong>Price goes below my target</strong><span class="muted">Useful when you are waiting to buy, or watching for a price drop.</span></span>
+    </label>
+  </fieldset>
+
+  <button class="btn btn-primary btn-lg btn-block" type="submit">{% icon 'bell' 24 %} Create Alert</button>
+</form>
+{% endblock %}

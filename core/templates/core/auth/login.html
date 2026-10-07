@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}
+{% load static ani_tags %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-head">
+    <img src="{% static 'core/img/logo-mark.svg' %}" alt="" width="64" height="64">
+    <h1>Log in to Ani</h1>
+    <p class="lead">See your crops, alerts and prices near you.</p>
+  </div>
+  <form class="card" method="post" novalidate>{% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if form.non_field_errors %}<div class="form-errors" role="alert">{% for e in form.non_field_errors %}<p class="error">{% icon 'info' 18 %} {{ e }}</p>{% endfor %}</div>{% endif %}
+    {% for field in form %}{% include "core/partials/field.html" %}{% endfor %}
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+    {% if show_sample_notice %}<p class="demo-hint"><strong>Demo account:</strong> juan@example.com / ani12345</p>{% endif %}
+  </form>
+  <p class="auth-alt">New to Ani? <a href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><strong>Create a free account</strong></a></p>
+</div>
+{% endblock %}

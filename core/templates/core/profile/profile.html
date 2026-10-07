@@ -1,0 +1,27 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="narrow">
+  <section class="card profile-head">
+    <span class="avatar" aria-hidden="true">{{ current_user.first_name|first|upper }}</span>
+    <div>
+      <h1>{{ current_user.name }}</h1>
+      <p>{% icon 'mail' 18 %} {{ current_user.email }}</p>
+      {% if current_user.location %}<p>{% icon 'pin' 18 %} {{ current_user.location }}</p>{% endif %}
+    </div>
+  </section>
+
+  <ul class="menu-list card">
+    <li><a href="{% url 'profile_edit' %}"><span class="menu-icon">{% icon 'user' %}</span><span class="menu-text"><strong>My Information</strong><span class="muted">Name, email, location and password</span></span>{% icon 'chevron-right' %}</a></li>
+    <li><a href="{% url 'my_crops' %}"><span class="menu-icon">{% icon 'sprout' %}</span><span class="menu-text"><strong>My Crops</strong><span class="muted">The crops you check often</span></span>{% icon 'chevron-right' %}</a></li>
+    <li><a href="{% url 'alerts' %}"><span class="menu-icon">{% icon 'bell' %}</span><span class="menu-text"><strong>Price Alerts</strong><span class="muted">See and manage your alerts</span></span>{% icon 'chevron-right' %}</a></li>
+    <li><a href="{% url 'notification_settings' %}"><span class="menu-icon">{% icon 'phone' %}</span><span class="menu-text"><strong>Notification Settings</strong><span class="muted">How Ani sends you alerts</span></span>{% icon 'chevron-right' %}</a></li>
+    <li><a href="{% url 'help' %}"><span class="menu-icon">{% icon 'help' %}</span><span class="menu-text"><strong>Help &amp; Support</strong><span class="muted">Simple guides and contact</span></span>{% icon 'chevron-right' %}</a></li>
+  </ul>
+
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+    <button class="btn btn-secondary btn-block" type="submit">{% icon 'logout' 22 %} Log Out</button>
+  </form>
+</div>
+{% endblock %}

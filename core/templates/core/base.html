@@ -1,0 +1,105 @@
+{% load static ani_tags %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Crop prices{% endblock %} · Ani</title>
+  <meta name="description" content="Ani shows crop prices from DA Bantay Presyo, Kadiwa and local markets in one place. Better Prices. Stronger Farmers.">
+  <meta name="theme-color" content="#185B43">
+  <link rel="icon" href="{% static 'core/img/logo-mark.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{% static 'core/css/ani.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="app">
+    <aside class="sidebar" aria-label="Main menu">
+      <a class="brand" href="{% url 'home' %}">
+        <img src="{% static 'core/img/logo-mark.svg' %}" alt="" width="40" height="40">
+        <span><span class="brand-name">Ani</span><span class="brand-tagline">Better Prices. Stronger Farmers.</span></span>
+      </a>
+      <nav>
+        <ul class="side-nav">
+          <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' %} Home</a></li>
+          <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'wheat' %} Market Prices</a></li>
+          <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' %} Compare Markets</a></li>
+          <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' %} Price Alerts</a></li>
+          <li><a href="{% url 'my_crops' %}" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' %} My Crops</a></li>
+          <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' %} Profile</a></li>
+        </ul>
+      </nav>
+      <div class="side-help">
+        <p><strong>Need help?</strong><br>Simple guides for using Ani.</p>
+        <a class="btn btn-secondary btn-small btn-block" href="{% url 'help' %}">{% icon 'help' 20 %} Help &amp; Support</a>
+      </div>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <a class="brand brand-mobile" href="{% url 'home' %}" aria-label="Ani home">
+          <img src="{% static 'core/img/logo-mark.svg' %}" alt="" width="36" height="36">
+          <span class="brand-name">Ani</span>
+        </a>
+        <div class="topbar-actions">
+          <a class="topbar-link help-link-mobile" href="{% url 'help' %}">{% icon 'help' 22 %} Help</a>
+          {% if current_user %}
+            <a class="topbar-link" href="{% url 'alerts' %}">
+              {% icon 'bell' 22 %} <span class="sr-only">Price alerts</span>
+              {% if unread_count %}<span class="badge">{{ unread_count }} new</span>{% endif %}
+            </a>
+            <a class="topbar-link topbar-user" href="{% url 'profile' %}">
+              <span class="avatar" aria-hidden="true">{{ current_user.first_name|first|upper }}</span>
+              <span class="topbar-user-name">{{ current_user.name }}</span>
+              <span class="sr-only">Your profile</span>
+            </a>
+          {% else %}
+            <a class="btn btn-secondary btn-small" href="{% url 'login' %}">Log in</a>
+          {% endif %}
+        </div>
+      </header>
+
+      {% if show_sample_notice %}
+        <div class="notice-wrap">
+          <p class="notice-sample" role="note">{% icon 'info' 20 %}
+            <span><strong>Sample prices:</strong> this version uses example data for testing. These are not real market prices.</span>
+          </p>
+        </div>
+      {% endif %}
+
+      {% if messages %}
+        <div class="notice-wrap">
+          <div class="messages" role="status" aria-live="polite">
+            {% for message in messages %}
+              <p class="message message-{{ message.tags }}">{% if message.tags == 'error' %}{% icon 'info' %}{% elif message.tags == 'info' %}{% icon 'info' %}{% else %}{% icon 'check' %}{% endif %} <span>{{ message }}</span></p>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <main id="main" class="content" tabindex="-1">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="site-footer">
+        <p><strong>Ani</strong> · Better Prices. Stronger Farmers.</p>
+        <p>Prices come from public sources: DA Bantay Presyo, Kadiwa price lists and local market bulletins. Every price shows its source. <a href="{% url 'help' %}">Where do prices come from?</a></p>
+      </footer>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Main menu">
+    <ul>
+      <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 26 %}<span>Home</span></a></li>
+      <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'wheat' 26 %}<span>Prices</span></a></li>
+      <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' 26 %}<span>Compare</span></a></li>
+      <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 26 %}<span>Alerts</span></a></li>
+      <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' 'my_crops' 'my_crops_add' 'help' %}>{% icon 'user' 26 %}<span>Profile</span></a></li>
+    </ul>
+  </nav>
+
+  <script src="{% static 'core/js/app.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

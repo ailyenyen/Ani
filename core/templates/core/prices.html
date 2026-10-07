@@ -1,0 +1,81 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Market Prices{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Market Prices</h1>
+  <p class="lead">Find the latest prices for crops across different markets.</p>
+</section>
+
+<form class="card filters" method="get" action="{% url 'prices' %}">
+  <div class="filter-row">
+    <div class="field">
+      <label for="f-crop">What crop?</label>
+      <select id="f-crop" name="crop" data-autosubmit>
+        <option value="">All Crops</option>
+        {% for c in crops %}<option value="{{ c.slug }}"{% if selected_crop and c.id == selected_crop.id %} selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-location">Where?</label>
+      {% include "core/partials/location_select.html" with select_id="f-location" allow_all=True %}
+    </div>
+    <div class="field">
+      <label for="f-when">When?</label>
+      <select id="f-when" name="when" data-autosubmit>
+        {% for key, label, _days in when_choices %}<option value="{{ key }}"{% if key == when %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">{% icon 'search' 20 %} Show Prices</button>
+  </div>
+
+  <details class="more-filters"{% if more_filters_open %} open{% endif %}>
+    <summary>{% icon 'sliders' 20 %} More Filters</summary>
+    <div class="filter-row">
+      <div class="field">
+        <label for="f-category">Type of crop</label>
+        <select id="f-category" name="category">
+          <option value="">All types</option>
+          {% for cat in categories %}<option value="{{ cat }}"{% if cat == category %} selected{% endif %}>{{ cat }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-source">Price source</label>
+        <select id="f-source" name="source">
+          <option value="">All sources</option>
+          {% for src in sources %}<option value="{{ src }}"{% if src == source %} selected{% endif %}>{{ src }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-sort">Sort by</label>
+        <select id="f-sort" name="sort">
+          <option value=""{% if not sort %} selected{% endif %}>Most common crops first</option>
+          <option value="name"{% if sort == 'name' %} selected{% endif %}>Name (A to Z)</option>
+          <option value="price_high"{% if sort == 'price_high' %} selected{% endif %}>Highest price first</option>
+          <option value="price_low"{% if sort == 'price_low' %} selected{% endif %}>Lowest price first</option>
+          <option value="change"{% if sort == 'change' %} selected{% endif %}>Biggest price change</option>
+        </select>
+      </div>
+    </div>
+  </details>
+</form>
+
+<p class="result-line" aria-live="polite">
+  Showing {{ summaries|length }} crop{{ summaries|length|pluralize }}{% if location %} in {{ location }}{% else %} in all locations{% endif %}.
+  {% if when != 'today' %}Prices as of {% for key, label, _d in when_choices %}{% if key == when %}{{ label|lower }}{% endif %}{% endfor %}.{% endif %}
+  Tap a crop to see every market.
+</p>
+
+{% if summaries %}
+  <ul class="crop-cards">
+    {% for s in summaries %}<li>{% include "core/partials/crop_card.html" with s=s %}</li>{% endfor %}
+  </ul>
+{% else %}
+  <div class="card empty-state">
+    <span class="empty-emoji" aria-hidden="true">🔍</span>
+    <h2>No prices found</h2>
+    <p>Try choosing <strong>All Locations</strong> or another crop.</p>
+    <a class="btn btn-secondary" href="{% url 'prices' %}?location=all">Show all prices</a>
+  </div>
+{% endif %}
+{% endblock %}
