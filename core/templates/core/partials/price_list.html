@@ -1,19 +1,25 @@
 {% load ani_tags %}
-<ul class="price-list">
+<ul class="price-table">
+  <li class="pt-head" aria-hidden="true"><span>Crop</span><span>Market</span><span>Price (₱/kg)</span><span>Change</span><span>Updated</span><span></span></li>
   {% for s in summaries %}{% with row=s.headline %}
     <li>
-      <a class="price-item" href="{% url 'crop_detail' s.crop.slug %}{% if row.market.location %}?location={{ row.market.location|urlencode }}{% endif %}">
+      <a class="price-row" href="{% url 'crop_detail' s.crop.slug %}{% if row.market.location %}?location={{ row.market.location|urlencode }}{% endif %}">
         <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
-        <span class="pi-name">
+        <span class="pr-crop">
           <strong>{{ s.crop.name }}</strong>
           <span class="muted">{{ row.market.name }} · {{ row.market.location }}</span>
         </span>
-        <span class="pi-right">
+        <span class="pr-market">
+          <span>{{ row.market.name }}</span>
+          <span class="muted">{{ row.market.location }}{% if s.market_count > 1 %} · {{ s.market_count }} markets{% endif %}</span>
+        </span>
+        <span class="pr-right">
           <span class="price-md">{{ row.price|peso }}<span class="unit">/{{ s.crop.unit }}</span></span>
           {% include "core/partials/change.html" with row=row %}
         </span>
-        <span class="pi-updated">{{ row.date|updated_label }}</span>
-        <span class="pi-chevron">{% icon 'chevron-right' %}</span>
+        <span class="pr-change-col">{% include "core/partials/change.html" with row=row %}</span>
+        <span class="pr-updated">{{ row.date|updated_label }}</span>
+        <span class="pr-chevron">{% icon 'chevron-right' 20 %}</span>
       </a>
     </li>
   {% endwith %}{% endfor %}

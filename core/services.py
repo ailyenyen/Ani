@@ -36,6 +36,17 @@ RANGE_CHOICES = [
 ]
 
 
+# Each market keeps the same colour in charts and lists (brand palette order).
+MARKET_COLORS = ["#2E7D32", "#A5D6A7", "#FBC02D", "#F4E7C1"]
+_MARKET_COLOR_ORDER = {"DA Bantay Presyo": 0, "Kadiwa": 1, "Local Market": 2, "Sari-sari Market": 3}
+
+
+def market_color_index(market_name):
+    if market_name in _MARKET_COLOR_ORDER:
+        return _MARKET_COLOR_ORDER[market_name]
+    return sum(map(ord, market_name)) % len(MARKET_COLORS)
+
+
 def today():
     return timezone.localdate()
 

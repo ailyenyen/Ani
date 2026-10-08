@@ -128,10 +128,90 @@
     });
   }
 
+  // Writes each column's price above it, and marks the highest one.
+  var columnLabels = {
+    id: "aniColumnLabels",
+    afterDatasetsDraw: function (chart) {
+      var ctx = chart.ctx;
+      var meta = chart.getDatasetMeta(0);
+      var best = chart.data.bestIndex;
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      meta.data.forEach(function (bar, i) {
+        ctx.font = "600 15px Poppins, system-ui, sans-serif";
+        ctx.fillStyle = TEXT;
+        ctx.fillText(peso(chart.data.datasets[0].data[i]).replace("₱", ""), bar.x, bar.y - 6);
+        if (i === best) {
+          ctx.font = "600 12px Poppins, system-ui, sans-serif";
+          ctx.fillStyle = DEEP;
+          ctx.fillText("★ Highest", bar.x, bar.y - 26);
+        }
+      });
+      ctx.restore();
+    }
+  };
+
+  function columnChart(canvas, data) {
+    var max = Math.max.apply(null, data.values);
+    return new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: data.labels.map(splitLabel),
+        bestIndex: data.bestIndex,
+        datasets: [{
+          label: "Price per kg",
+          data: data.values,
+          backgroundColor: data.colors || data.values.map(function () { return GREEN; }),
+          borderColor: (data.colors || []).map(function (c) { return c === "#F4E7C1" ? "#E5D39C" : c; }),
+          borderWidth: 1,
+          borderRadius: { topLeft: 8, topRight: 8 },
+          borderSkipped: "bottom",
+          maxBarThickness: 72
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 34 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: TEXT,
+            displayColors: false,
+            callbacks: {
+              title: function (items) { return [].concat(items[0].label).join(" "); },
+              label: function (ctx) { return peso(ctx.parsed.y) + " per kg"; }
+            }
+          }
+        },
+        scales: {
+          y: { display: false, beginAtZero: true, suggestedMax: max * 1.05 },
+          x: {
+            grid: { display: false },
+            border: { color: GRID },
+            ticks: { color: TEXT, font: { size: 13, weight: "500" }, maxRotation: 0, autoSkip: false }
+          }
+        }
+      },
+      plugins: [columnLabels]
+    });
+  }
+
+  // "DA Bantay Presyo" -> ["DA Bantay", "Presyo"] so labels fit under narrow columns.
+  function splitLabel(label) {
+    var words = String(label).split(" ");
+    if (words.length < 2 || label.length < 10) return label;
+    var half = Math.ceil(words.length / 2);
+    return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+  }
+
   document.querySelectorAll("canvas[data-chart]").forEach(function (canvas) {
     var data = readData(canvas);
     if (!data || !data.values || !data.values.length) return;
-    if (canvas.getAttribute("data-chart") === "bars") barChart(canvas, data);
+    var kind = canvas.getAttribute("data-chart");
+    if (kind === "bars") barChart(canvas, data);
+    else if (kind === "columns") columnChart(canvas, data);
     else lineChart(canvas, data);
   });
 })();

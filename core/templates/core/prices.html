@@ -63,13 +63,11 @@
 <p class="result-line" aria-live="polite">
   Showing {{ summaries|length }} crop{{ summaries|length|pluralize }}{% if location %} in {{ location }}{% else %} in all locations{% endif %}.
   {% if when != 'today' %}Prices as of {% for key, label, _d in when_choices %}{% if key == when %}{{ label|lower }}{% endif %}{% endfor %}.{% endif %}
-  Tap a crop to see every market.
+  Tap a crop to see the price at every market.
 </p>
 
 {% if summaries %}
-  <ul class="crop-cards">
-    {% for s in summaries %}<li>{% include "core/partials/crop_card.html" with s=s %}</li>{% endfor %}
-  </ul>
+  {% include "core/partials/price_list.html" with summaries=summaries %}
 {% else %}
   <div class="card empty-state">
     <span class="empty-emoji" aria-hidden="true">🔍</span>

@@ -27,7 +27,7 @@
             <p class="muted" style="margin-top:12px">No recent price in your area yet.</p>
           {% endif %}
           <div class="cc-actions">
-            <a class="btn btn-secondary btn-small" href="{% url 'crop_detail' crop.slug %}">{% icon 'trend' 20 %} View Price</a>
+            <a class="btn btn-soft btn-small" href="{% url 'crop_detail' crop.slug %}">{% icon 'trend' 20 %} View Price</a>
             <form method="post" action="{% url 'my_crops_remove' crop.slug %}" data-confirm="Remove {{ crop.name }} from My Crops?">{% csrf_token %}
               <button class="btn btn-text btn-danger" type="submit">{% icon 'trash' 20 %} Remove</button>
             </form>

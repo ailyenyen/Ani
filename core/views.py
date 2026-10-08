@@ -9,13 +9,13 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
 
 from . import auth, services
 from .alerts import check_alerts, describe_alert
 from .forms import LoginForm, PriceAlertForm, ProfileForm, SignupForm
-from .models import DeviceToken, Notification, PriceAlert, SavedCrop, User
+from .models import DeviceToken, Market, Notification, PriceAlert, SavedCrop, User
 from .templatetags.ani_tags import peso
 
 
@@ -86,10 +86,24 @@ def home(request):
         points = services.price_trend(db, headline.crop, headline.market, 7)
         chart = services.chart_data(points, f"{headline.crop.name} Price — Last 7 Days")
 
+    markets_stmt = select(func.count(Market.id))
+    if location:
+        markets_stmt = markets_stmt.where(Market.location == location)
+    stats = {
+        "crop_count": len(summaries),
+        "source_count": len(services.list_sources(db)),
+        "market_count": db.scalar(markets_stmt),
+        "saved_count": len(saved_ids),
+        "active_alerts": db.scalar(
+            select(func.count(PriceAlert.id)).where(PriceAlert.user_id == user.id, PriceAlert.active.is_(True))
+        ) if user else 0,
+    }
+
     return render(
         request,
         "core/home.html",
         {
+            "stats": stats,
             "locations": locations,
             "location": location,
             "featured": featured,
@@ -211,11 +225,18 @@ def compare(request):
             "title": f"{crop.name} Price by Market",
             "labels": [r.market.name for r in rows],
             "values": [float(r.price) for r in rows],
+            "colors": [services.MARKET_COLORS[services.market_color_index(r.market.name)] for r in rows],
             "bestIndex": 0,
         }
         chart_height = 70 * len(rows) + 30
     comparisons = [
-        {"row": r, "difference": best.price - r.price, "is_best": r.price == best.price} for r in rows
+        {
+            "row": r,
+            "difference": best.price - r.price,
+            "is_best": r.price == best.price,
+            "color_index": services.market_color_index(r.market.name),
+        }
+        for r in rows
     ]
 
     return render(

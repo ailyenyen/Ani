@@ -25,7 +25,7 @@
 
 {% if best %}
   <section class="best-callout" aria-live="polite">
-    <span class="best-icon">{% icon 'check' 28 %}</span>
+    <span class="icon-badge solid">{% icon 'check' 26 %}</span>
     <div>
       <p class="eyebrow">Highest price for {{ crop.name }} in {{ location }}</p>
       <p class="best-text">{{ best.market.name }}: <span class="price">{{ best.price|peso }}/{{ crop.unit }}</span></p>
@@ -33,12 +33,13 @@
     </div>
   </section>
 
+  <div class="compare-grid">
   {% if chart and comparisons|length > 1 %}
   <section class="card" aria-labelledby="chart-title">
-    <h2 class="chart-title" id="chart-title">{{ chart.title }}, {{ location }}</h2>
-    <p class="chart-note">Price per kilo. The dark green bar is the highest price.</p>
-    <div class="chart-box" style="height: {{ chart_height }}px">
-      <canvas data-chart="bars" data-source="compare-chart-data" role="img"
+    <h2 class="chart-title" id="chart-title">Price Comparison (₱/kg)</h2>
+    <p class="chart-note">{{ crop.name }} in {{ location }}. The highest price is marked.</p>
+    <div class="chart-box" style="height:280px">
+      <canvas data-chart="columns" data-source="compare-chart-data" role="img"
         aria-label="{{ chart.title }}. Highest: {{ best.market.name }} at {{ best.price|peso }} per kilo."></canvas>
     </div>
     {{ chart|json_script:"compare-chart-data" }}
@@ -46,13 +47,16 @@
   {% endif %}
 
   <section class="card" aria-labelledby="list-title">
-    <h2 id="list-title">All Markets</h2>
+    <h2 id="list-title">Market Prices</h2>
     <ul class="compare-list">
       {% for c in comparisons %}
         <li{% if c.is_best %} class="is-best"{% endif %}>
           <div class="cl-name">
-            <strong>{{ c.row.market.name }}</strong>
-            <span class="muted">Source: {{ c.row.source }} · {{ c.row.date|updated_label }}</span>
+            <span class="market-dot m{{ c.color_index }}" aria-hidden="true"></span>
+            <span class="cl-name-text">
+              <strong>{{ c.row.market.name }}</strong>
+              <span class="muted">Source: {{ c.row.source }} · {{ c.row.date|updated_label }}</span>
+            </span>
           </div>
           <div class="cl-right">
             <span class="price-md">{{ c.row.price|peso }}<span class="unit">/{{ crop.unit }}</span></span>
@@ -63,10 +67,11 @@
       {% endfor %}
     </ul>
   </section>
+  </div>
 
   <div class="bottom-cta" style="display:flex;flex-wrap:wrap;gap:12px">
     <a class="btn btn-primary" href="{% url 'alert_new' %}?crop={{ crop.slug }}">{% icon 'bell' 20 %} Set Price Alert</a>
-    <a class="btn btn-secondary" href="{% url 'crop_detail' crop.slug %}?location={{ location|urlencode }}">{% icon 'trend' 20 %} See {{ crop.name }} price trend</a>
+    <a class="btn btn-soft" href="{% url 'crop_detail' crop.slug %}?location={{ location|urlencode }}">{% icon 'trend' 20 %} See {{ crop.name }} price trend</a>
   </div>
 {% else %}
   <div class="card empty-state">

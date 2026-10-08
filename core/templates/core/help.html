@@ -9,39 +9,39 @@
 
 <div class="help-grid">
   <section class="card">
-    <h2>How do I check a crop's price?</h2>
+    <div class="help-card-head"><span class="icon-badge solid">{% icon 'bars' 22 %}</span><h2>How do I check a crop's price?</h2></div>
     <ol class="steps">
       <li><span>Tap <strong>Market Prices</strong></span></li>
       <li><span>Choose your crop</span></li>
       <li><span>Select your location</span></li>
     </ol>
-    <a class="btn btn-secondary btn-small" href="{% url 'prices' %}">{% icon 'wheat' 20 %} Go to Market Prices</a>
+    <a class="btn btn-soft btn-small" href="{% url 'prices' %}">{% icon 'wheat' 20 %} Go to Market Prices</a>
   </section>
 
   <section class="card">
-    <h2>How do I compare markets?</h2>
+    <div class="help-card-head"><span class="icon-badge solid">{% icon 'compare' 22 %}</span><h2>How do I compare markets?</h2></div>
     <ol class="steps">
       <li><span>Tap <strong>Compare Markets</strong></span></li>
       <li><span>Choose your crop</span></li>
       <li><span>Select your location</span></li>
       <li><span>Look at the prices. The highest price is shown first.</span></li>
     </ol>
-    <a class="btn btn-secondary btn-small" href="{% url 'compare' %}">{% icon 'compare' 20 %} Go to Compare Markets</a>
+    <a class="btn btn-soft btn-small" href="{% url 'compare' %}">{% icon 'compare' 20 %} Go to Compare Markets</a>
   </section>
 
   <section class="card">
-    <h2>How do price alerts work?</h2>
+    <div class="help-card-head"><span class="icon-badge solid">{% icon 'bell' 22 %}</span><h2>How do price alerts work?</h2></div>
     <p>Ani will send you a message when your chosen crop reaches the price you set.</p>
     <ol class="steps">
       <li><span>Tap <strong>Price Alerts</strong>, then <strong>Add Price Alert</strong></span></li>
       <li><span>Choose a crop and type your price</span></li>
       <li><span>Choose <strong>above</strong> or <strong>below</strong></span></li>
     </ol>
-    <a class="btn btn-secondary btn-small" href="{% url 'alert_new' %}">{% icon 'bell' 20 %} Add Price Alert</a>
+    <a class="btn btn-soft btn-small" href="{% url 'alert_new' %}">{% icon 'bell' 20 %} Add Price Alert</a>
   </section>
 
   <section class="card">
-    <h2>What do ↑ and ↓ mean?</h2>
+    <div class="help-card-head"><span class="icon-badge solid">{% icon 'trend' 22 %}</span><h2>What do ↑ and ↓ mean?</h2></div>
     <p><span class="change change-up">↑ 5.2%</span> means the price is <strong>5.2% higher</strong> than about one week ago.</p>
     <p><span class="change change-down">↓ 1.5%</span> means the price is <strong>1.5% lower</strong> than about one week ago.</p>
     <p class="muted" style="margin:0">All prices are in pesos per kilo (₱/kg).</p>
@@ -49,7 +49,7 @@
 </div>
 
 <section class="card" aria-labelledby="sources-title">
-  <h2 id="sources-title">Where do the prices come from?</h2>
+  <div class="help-card-head"><span class="icon-badge solid">{% icon 'shield' 22 %}</span><h2 id="sources-title">Where do the prices come from?</h2></div>
   <p>Ani collects prices from public sources. Every price in Ani shows its source, so you know where it came from.</p>
   <ul>
     <li><strong>DA Bantay Presyo</strong>: price monitoring by the Department of Agriculture</li>

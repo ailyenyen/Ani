@@ -66,6 +66,13 @@ def nice_date(value):
     return f"{value:%B} {value.day}, {value.year}"
 
 
+@register.filter
+def market_color(market):
+    from core.services import market_color_index
+
+    return market_color_index(market.name)
+
+
 @register.simple_tag
 def greeting():
     hour = timezone.localtime().hour
@@ -114,6 +121,8 @@ ICONS = {
     '<circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
     "edit": '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
     "trend": '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    "bars": '<path d="M5 20v-6M12 20V9M19 20V4"/>',
+    "leaf": '<path d="M5 20c0-9 6-15 15-16 0 9-6 15-15 16Z"/><path d="M5 20 13 12"/>',
     "store": '<path d="M4 10v10h16V10"/><path d="M3 4h18l-1 6H4L3 4Z"/><path d="M10 20v-5h4v5"/>',
     "shield": '<path d="M12 3 5 6v6c0 4.5 3 8 7 9 4-1 7-4.5 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
     "phone": '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',

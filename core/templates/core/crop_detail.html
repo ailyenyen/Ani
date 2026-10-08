@@ -2,7 +2,7 @@
 {% load ani_tags %}
 {% block title %}{{ crop.name }} price{% endblock %}
 {% block content %}
-<a class="back-link" href="{% url 'prices' %}">{% icon 'chevron-left' 20 %} Back to Market Prices</a>
+<a class="back-link" href="{% url 'prices' %}">{% icon 'chevron-left' 20 %} Crop Details</a>
 
 <section class="card crop-hero">
   <div class="crop-hero-main">
@@ -11,13 +11,37 @@
       <h1>{{ crop.name }} <span class="english">{{ crop.english_name }}</span></h1>
       {% if headline %}
         <p class="price-big">{{ headline.price|peso }}<span class="unit">/{{ crop.unit }}</span></p>
-        <p>{% include "core/partials/change.html" with row=headline long=True %}</p>
-        <p class="source-line">{% icon 'shield' 18 %} Source: {{ headline.source }} · {{ location }} · {{ headline.date|updated_label }}</p>
+        <p class="change-row">{% include "core/partials/change.html" with row=headline %}{% if headline.direction == 'up' or headline.direction == 'down' %}<span class="change-note">vs. last week</span>{% endif %}</p>
+        <p class="source-line">{% icon 'shield' 18 %}Source: {{ headline.source }} · {{ location }} · {{ headline.date|updated_label }}</p>
       {% else %}
         <p class="muted">No recent price in {{ location }}.</p>
       {% endif %}
     </div>
   </div>
+
+  {% if stats %}
+  <div>
+    <div class="stats" aria-label="Price summary, last {{ range_label|lower }}">
+      <div class="stat">
+        <span class="stat-label">Highest Price</span>
+        <strong class="stat-value">{{ stats.highest.price|peso }}<span class="unit">/{{ crop.unit }}</span></strong>
+        <span class="muted">{{ stats.highest.market.name }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Lowest Price</span>
+        <strong class="stat-value">{{ stats.lowest.price|peso }}<span class="unit">/{{ crop.unit }}</span></strong>
+        <span class="muted">{{ stats.lowest.market.name }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Average Price</span>
+        <strong class="stat-value">{{ stats.average|peso }}<span class="unit">/{{ crop.unit }}</span></strong>
+        <span class="muted">All markets</span>
+      </div>
+    </div>
+    <p class="chart-note" style="margin:8px 0 0">All markets in {{ location }}, last {{ range_label|lower }}.</p>
+  </div>
+  {% endif %}
+
   <div class="crop-hero-tools">
     <form method="get">
       <input type="hidden" name="range" value="{{ days }}">
@@ -31,7 +55,7 @@
       {% if is_saved %}
         <form method="post" action="{% url 'my_crops_remove' crop.slug %}">{% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button class="btn btn-secondary" type="submit">{% icon 'check' 20 %} Saved in My Crops</button>
+          <button class="btn btn-soft" type="submit">{% icon 'check' 20 %} Saved in My Crops</button>
         </form>
       {% else %}
         <form method="post" action="{% url 'my_crops_add' %}">{% csrf_token %}
@@ -45,28 +69,6 @@
 </section>
 
 {% if rows %}
-<section class="card" aria-labelledby="markets-title">
-  <h2 id="markets-title">Price at Different Markets</h2>
-  <p class="muted">In {{ location }}. Highest price first.</p>
-  <ul class="market-list">
-    {% for r in rows %}
-      <li>
-        <span class="ml-name">
-          <strong>{{ r.market.name }}</strong>
-          <span class="muted">Source: {{ r.source }} · {{ r.date|updated_label }}</span>
-        </span>
-        <span class="ml-right">
-          <span class="price-md">{{ r.price|peso }}<span class="unit">/{{ crop.unit }}</span></span>
-          {% if forloop.first and rows|length > 1 %}<span class="tag tag-best">Highest price</span>{% else %}{% include "core/partials/change.html" with row=r %}{% endif %}
-        </span>
-      </li>
-    {% endfor %}
-  </ul>
-  {% if rows|length > 1 %}
-  <a class="btn btn-secondary" href="{% url 'compare' %}?crop={{ crop.slug }}&location={{ location|urlencode }}">{% icon 'compare' 20 %} Compare these markets</a>
-  {% endif %}
-</section>
-
 <section class="card" aria-labelledby="trend-title">
   <div class="section-head">
     <h2 id="trend-title">Price Trend</h2>
@@ -89,29 +91,32 @@
   {% endif %}
 </section>
 
-{% if stats %}
-<section class="card" aria-labelledby="summary-title">
-  <h2 id="summary-title">Price Summary</h2>
-  <p class="muted">All markets in {{ location }}, last {{ range_label|lower }}.</p>
-  <div class="stats">
-    <div class="stat">
-      <span class="stat-label">Highest Price</span>
-      <strong class="stat-value">{{ stats.highest.price|peso }}<span class="unit">/{{ crop.unit }}</span></strong>
-      <span class="muted">{{ stats.highest.market.name }}, {{ stats.highest.date|date:"M j" }}</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Lowest Price</span>
-      <strong class="stat-value">{{ stats.lowest.price|peso }}<span class="unit">/{{ crop.unit }}</span></strong>
-      <span class="muted">{{ stats.lowest.market.name }}, {{ stats.lowest.date|date:"M j" }}</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Average</span>
-      <strong class="stat-value">{{ stats.average|peso }}<span class="unit">/{{ crop.unit }}</span></strong>
-      <span class="muted">All markets</span>
-    </div>
+<section class="card" aria-labelledby="markets-title">
+  <div class="section-head">
+    <h2 id="markets-title">Market Prices</h2>
+    <span class="muted" style="font-size:.9375rem">Highest price first</span>
   </div>
+  <ul class="market-list">
+    {% for r in rows %}
+      <li>
+        <span class="ml-name">
+          <span class="market-dot m{{ r.market|market_color }}" aria-hidden="true"></span>
+          <span class="ml-name-text">
+            <strong>{{ r.market.name }}</strong>
+            <span class="muted">Source: {{ r.source }} · {{ r.date|updated_label }}</span>
+          </span>
+        </span>
+        <span class="ml-right">
+          <span class="price-md">{{ r.price|peso }}<span class="unit">/{{ crop.unit }}</span></span>
+          {% if forloop.first and rows|length > 1 %}<span class="tag tag-best">Highest price</span>{% else %}{% include "core/partials/change.html" with row=r %}{% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+  {% if rows|length > 1 %}
+  <a class="btn btn-soft" href="{% url 'compare' %}?crop={{ crop.slug }}&location={{ location|urlencode }}">{% icon 'compare' 20 %} Compare these markets</a>
+  {% endif %}
 </section>
-{% endif %}
 {% else %}
 <section class="card empty-state">
   <span class="empty-emoji" aria-hidden="true">{{ crop.icon }}</span>
@@ -121,7 +126,7 @@
 {% endif %}
 
 <div class="bottom-cta">
-  <a class="btn btn-primary btn-lg btn-block" href="{% url 'alert_new' %}?crop={{ crop.slug }}">{% icon 'bell' 24 %} Set Price Alert for {{ crop.name }}</a>
+  <a class="btn btn-primary btn-lg btn-block" href="{% url 'alert_new' %}?crop={{ crop.slug }}">{% icon 'bell' 24 %} Set Price Alert</a>
 </div>
 {% endblock %}
 {% block scripts %}{% if chart %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}

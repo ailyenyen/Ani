@@ -16,7 +16,7 @@
   <ul class="notif-list">
     {% for n in notifications %}
       <li class="notif{% if not n.is_read %} is-new{% endif %}">
-        {% icon 'bell' 22 %}
+        <span class="icon-badge yellow">{% icon 'bell' 20 %}</span>
         <div class="notif-body">
           <strong>{{ n.title }}</strong>
           <p>{{ n.message }}</p>
@@ -44,7 +44,7 @@
               <h3>{{ a.crop.name }}</h3>
               <p class="alert-text">{{ item.text }}</p>
               {% if item.current %}
-                <p class="alert-now">Price now: <strong>{{ item.current.headline.price|peso }}/{{ a.crop.unit }}</strong> at {{ item.current.headline.market.name }}</p>
+                <p class="alert-now">Now {{ item.current.headline.price|peso }}/{{ a.crop.unit }} at {{ item.current.headline.market.name }} · {{ item.current.market_count }} market{{ item.current.market_count|pluralize }}</p>
               {% endif %}
             </div>
           </div>
