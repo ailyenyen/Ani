@@ -11,7 +11,7 @@
   var GRID = "#ECE9DE";
 
   Chart.defaults.font.family = '"Poppins", system-ui, sans-serif';
-  Chart.defaults.font.size = 14;
+  Chart.defaults.font.size = 12;
   Chart.defaults.color = MUTED;
   Chart.defaults.animation = false;
 
@@ -37,8 +37,8 @@
           data: data.values,
           borderColor: GREEN,
           backgroundColor: GREEN,
-          borderWidth: 3,
-          pointRadius: data.values.length > 31 ? 0 : 4,
+          borderWidth: 2.25,
+          pointRadius: data.values.length > 31 ? 0 : 3,
           pointHoverRadius: 6,
           tension: 0.25,
           fill: false
@@ -139,7 +139,7 @@
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
       meta.data.forEach(function (bar, i) {
-        ctx.font = "600 15px Poppins, system-ui, sans-serif";
+        ctx.font = "600 14px Poppins, system-ui, sans-serif";
         ctx.fillStyle = TEXT;
         ctx.fillText(peso(chart.data.datasets[0].data[i]).replace("₱", ""), bar.x, bar.y - 6);
         if (i === best) {
@@ -167,7 +167,7 @@
           borderWidth: 1,
           borderRadius: { topLeft: 8, topRight: 8 },
           borderSkipped: "bottom",
-          maxBarThickness: 72
+          maxBarThickness: 64
         }]
       },
       options: {
@@ -190,7 +190,7 @@
           x: {
             grid: { display: false },
             border: { color: GRID },
-            ticks: { color: TEXT, font: { size: 13, weight: "500" }, maxRotation: 0, autoSkip: false }
+            ticks: { color: MUTED, font: { size: 12, weight: "500" }, maxRotation: 0, autoSkip: false }
           }
         }
       },

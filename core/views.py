@@ -216,19 +216,25 @@ def compare(request):
         saved_ids = services.saved_crop_ids(db, user)
         crop = next((c for c in crops if c.id in saved_ids[:1]), crops[0] if crops else None)
 
-    rows, best, chart, chart_height = [], None, None, 0
+    when = request.GET.get("when", "today")
+    if when not in {key for key, _l, _d in services.WHEN_CHOICES}:
+        when = "today"
+
+    rows, best, chart = [], None, None
     if crop is not None:
-        rows = services.compare_markets(db, crop, location)
+        rows = services.compare_markets(db, crop, location, as_of=services.as_of_for(when))
     if rows:
         best = rows[0]
+        # The chart keeps markets in a fixed order (and colour) so it reads the same every time;
+        # the list below is sorted by price.
+        chart_rows = sorted(rows, key=lambda r: (services.market_color_index(r.market.name), r.market.name))
         chart = {
             "title": f"{crop.name} Price by Market",
-            "labels": [r.market.name for r in rows],
-            "values": [float(r.price) for r in rows],
-            "colors": [services.MARKET_COLORS[services.market_color_index(r.market.name)] for r in rows],
-            "bestIndex": 0,
+            "labels": [r.market.name for r in chart_rows],
+            "values": [float(r.price) for r in chart_rows],
+            "colors": [services.MARKET_COLORS[services.market_color_index(r.market.name)] for r in chart_rows],
+            "bestIndex": chart_rows.index(best),
         }
-        chart_height = 70 * len(rows) + 30
     comparisons = [
         {
             "row": r,
@@ -250,7 +256,8 @@ def compare(request):
             "comparisons": comparisons,
             "best": best,
             "chart": chart,
-            "chart_height": chart_height,
+            "when": when,
+            "when_choices": services.WHEN_CHOICES,
         },
     )
 

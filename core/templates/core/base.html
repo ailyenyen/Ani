@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Crop prices{% endblock %} · Ani</title>
   <meta name="description" content="Ani shows crop prices from DA Bantay Presyo, Kadiwa and local markets in one place. Better Prices. Stronger Farmers.">
-  <meta name="theme-color" content="#185B43">
+  <meta name="theme-color" content="#FFFFFF">
   <link rel="icon" href="{% static 'core/img/logo-mark.svg' %}" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,65 +17,64 @@
   <div class="app">
     <aside class="sidebar" aria-label="Main menu">
       <a class="brand" href="{% url 'home' %}">
-        <img src="{% static 'core/img/logo-wordmark.svg' %}" alt="Ani home" width="89" height="46">
+        <img src="{% static 'core/img/logo-wordmark.svg' %}" alt="Ani home" width="77" height="40">
       </a>
       <nav>
         <ul class="side-nav">
-          <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' %} Home</a></li>
-          <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'wheat' %} Market Prices</a></li>
-          <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' %} Compare Markets</a></li>
-          <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' %} Price Alerts</a></li>
-          <li><a href="{% url 'my_crops' %}" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' %} My Crops</a></li>
-          <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' %} Profile</a></li>
+          <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 20 %} Home</a></li>
+          <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 20 %} Market Prices</a></li>
+          <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' 20 %} Compare Markets</a></li>
+          <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 20 %} Price Alerts</a></li>
+          <li><a href="{% url 'my_crops' %}" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' 20 %} My Crops</a></li>
+          <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' 20 %} Profile</a></li>
         </ul>
       </nav>
       <div class="side-help">
-        <span class="side-help-icon">{% icon 'sprout' 26 %}</span>
-        <p><strong>Need help?</strong><br><span class="muted">We're here for you.</span></p>
-        <a class="btn btn-primary btn-small btn-block" href="{% url 'help' %}">{% icon 'help' 20 %} Help &amp; Support</a>
+        {% icon 'sprout' 24 %}
+        <strong>Need help?</strong>
+        <p>We're here for you.</p>
+        <a class="btn btn-primary btn-small btn-block" href="{% url 'help' %}">Contact Us</a>
       </div>
     </aside>
 
     <div class="main-col">
       <header class="topbar">
-        <a class="brand brand-mobile" href="{% url 'home' %}">
-          <img src="{% static 'core/img/logo-wordmark.svg' %}" alt="Ani home" width="74" height="38">
-        </a>
-        <div class="topbar-actions">
-          <a class="topbar-link help-link-mobile" href="{% url 'help' %}">{% icon 'help' 22 %} Help</a>
-          {% if current_user %}
-            <a class="topbar-link" href="{% url 'alerts' %}">
-              {% icon 'bell' 24 %}
-              <span class="sr-only">Price alerts{% if unread_count %}, {{ unread_count }} new{% endif %}</span>
-              {% if unread_count %}<span class="badge-dot" aria-hidden="true">{{ unread_count }}</span>{% endif %}
-            </a>
-            <a class="topbar-link topbar-user" href="{% url 'profile' %}">
-              <span class="avatar" aria-hidden="true">{{ current_user.first_name|first|upper }}</span>
-              <span class="topbar-user-name">{{ current_user.name }}</span>
-              {% icon 'chevron-down' 18 %}
-              <span class="sr-only">Your profile</span>
-            </a>
-          {% else %}
-            <a class="btn btn-secondary btn-small" href="{% url 'login' %}">Log in</a>
-          {% endif %}
+        <div class="appbar">
+          <a class="brand" href="{% url 'home' %}"><img src="{% static 'core/img/logo-wordmark.svg' %}" alt="Ani home" width="65" height="34"></a>
+          <div class="topbar-actions">
+            <a class="icon-btn help-link" href="{% url 'help' %}">{% icon 'help' 22 %}<span class="sr-only">Help</span></a>
+            {% if current_user %}
+              <a class="icon-btn" href="{% url 'alerts' %}">
+                {% icon 'bell' 22 %}
+                <span class="sr-only">Price alerts{% if unread_count %}, {{ unread_count }} new{% endif %}</span>
+                {% if unread_count %}<span class="dot" aria-hidden="true"></span>{% endif %}
+              </a>
+              <a class="icon-btn user-chip" href="{% url 'profile' %}">
+                <span class="avatar" aria-hidden="true">{{ current_user.first_name|first|upper }}</span>
+                <span class="user-chip-name">{{ current_user.name }}</span>
+                {% icon 'chevron-down' 16 %}
+                <span class="sr-only">Your profile</span>
+              </a>
+            {% else %}
+              <a class="btn btn-secondary btn-small" href="{% url 'login' %}">Log in</a>
+            {% endif %}
+          </div>
         </div>
+        <div class="page-title">{% block header %}{% endblock %}</div>
       </header>
 
-      {% if show_sample_notice %}
+      {% if show_sample_notice or messages %}
         <div class="notice-wrap">
-          <p class="notice-sample" role="note">{% icon 'info' 20 %}
-            <span><strong>Sample prices:</strong> this version uses example data for testing. These are not real market prices.</span>
-          </p>
-        </div>
-      {% endif %}
-
-      {% if messages %}
-        <div class="notice-wrap">
-          <div class="messages" role="status" aria-live="polite">
-            {% for message in messages %}
-              <p class="message message-{{ message.tags }}">{% if message.tags == 'error' %}{% icon 'info' %}{% elif message.tags == 'info' %}{% icon 'info' %}{% else %}{% icon 'check' %}{% endif %} <span>{{ message }}</span></p>
-            {% endfor %}
-          </div>
+          {% if show_sample_notice %}
+            <p class="notice-sample" role="note">{% icon 'info' 16 %}<span><strong>Sample prices.</strong> This version uses example data, not real market prices.</span></p>
+          {% endif %}
+          {% if messages %}
+            <div class="messages" role="status" aria-live="polite">
+              {% for message in messages %}
+                <p class="message message-{{ message.tags }}">{% if message.tags == 'success' %}{% icon 'check' 20 %}{% else %}{% icon 'info' 20 %}{% endif %}<span>{{ message }}</span></p>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
       {% endif %}
 
@@ -85,18 +84,18 @@
 
       <footer class="site-footer">
         <p><strong>Ani</strong> · Better Prices. Stronger Farmers.</p>
-        <p>Prices come from public sources: DA Bantay Presyo, Kadiwa price lists and local market bulletins. Every price shows its source. <a href="{% url 'help' %}">Where do prices come from?</a></p>
+        <p>Prices come from public sources: DA Bantay Presyo, Kadiwa price lists and local market bulletins. <a href="{% url 'help' %}">Where do prices come from?</a></p>
       </footer>
     </div>
   </div>
 
   <nav class="bottom-nav" aria-label="Main menu">
     <ul>
-      <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 26 %}<span>Home</span></a></li>
-      <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'wheat' 26 %}<span>Prices</span></a></li>
-      <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' 26 %}<span>Compare</span></a></li>
-      <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 26 %}<span>Alerts</span></a></li>
-      <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' 'my_crops' 'my_crops_add' 'help' %}>{% icon 'user' 26 %}<span>Profile</span></a></li>
+      <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 24 %}<span>Home</span></a></li>
+      <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 24 %}<span>Markets</span></a></li>
+      <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' 24 %}<span>Compare</span></a></li>
+      <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 24 %}<span>Alerts</span></a></li>
+      <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' 'my_crops' 'my_crops_add' 'help' %}>{% icon 'user' 24 %}<span>Profile</span></a></li>
     </ul>
   </nav>
 

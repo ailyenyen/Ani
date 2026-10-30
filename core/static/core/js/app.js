@@ -34,3 +34,13 @@
     });
   });
 })();
+
+/* Table rows open the crop page when tapped anywhere on the row. */
+(function () {
+  document.querySelectorAll("tr[data-href]").forEach(function (row) {
+    row.addEventListener("click", function (event) {
+      if (event.target.closest("a, button")) return;
+      window.location.href = row.getAttribute("data-href");
+    });
+  });
+})();

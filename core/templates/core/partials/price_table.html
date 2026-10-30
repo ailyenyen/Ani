@@ -1,0 +1,41 @@
+{% load ani_tags %}
+{# Wide screens: a real table. Phones: list rows. `variant` is "home" (dates, no icons) or "prices" (crop icons). #}
+<table class="data-table wide-only">
+  <thead>
+    <tr>
+      <th scope="col">Crop</th>
+      <th scope="col">Market</th>
+      <th scope="col">Price (₱/kg)</th>
+      <th scope="col">Change</th>
+      {% if variant == 'home' %}<th scope="col">Updated</th>{% else %}<th scope="col"><span class="sr-only">Open</span></th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in summaries %}{% with row=s.headline %}
+      <tr data-href="{% url 'crop_detail' s.crop.slug %}?location={{ row.market.location|urlencode }}">
+        <td>
+          {% if variant == 'home' %}
+            <a class="row-link" href="{% url 'crop_detail' s.crop.slug %}?location={{ row.market.location|urlencode }}">{{ s.crop.name }}</a>
+          {% else %}
+            <span class="crop-cell"><span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span><a class="row-link" href="{% url 'crop_detail' s.crop.slug %}?location={{ row.market.location|urlencode }}">{{ s.crop.name }}</a></span>
+          {% endif %}
+        </td>
+        <td class="td-muted">{{ row.market.name }}{% if not location %} ({{ row.market.location }}){% endif %}</td>
+        <td class="td-price">{{ row.price|floatformat:2 }}</td>
+        <td>{% include "core/partials/change.html" with row=row %}</td>
+        {% if variant == 'home' %}<td class="td-muted">{{ row.date|date:"M j, Y" }}</td>{% else %}<td class="td-chevron">{% icon 'chevron-right' 18 %}</td>{% endif %}
+      </tr>
+    {% endwith %}{% endfor %}
+  </tbody>
+</table>
+<ul class="row-list narrow-only">
+  {% for s in summaries %}{% with row=s.headline %}
+    <li>
+      <a class="row-item" href="{% url 'crop_detail' s.crop.slug %}?location={{ row.market.location|urlencode }}">
+        <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
+        <span class="row-main"><strong>{{ s.crop.name }}</strong><span>{{ row.market.name }}{% if not location %} · {{ row.market.location }}{% endif %}</span></span>
+        <span class="row-end"><span class="price-md">{{ row.price|peso }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
+      </a>
+    </li>
+  {% endwith %}{% endfor %}
+</ul>

@@ -1,12 +1,8 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}Add Price Alert{% endblock %}
+{% block header %}{% url 'alerts' as back_url %}{% include "core/partials/page_title.html" with title="Add Price Alert" lead="Answer 3 quick questions. We will message you when the price is reached." back=back_url back_label="Back to Price Alerts" %}{% endblock %}
 {% block content %}
-<a class="back-link" href="{% url 'alerts' %}">{% icon 'chevron-left' 20 %} Back to Price Alerts</a>
-<section class="page-head">
-  <h1>Add Price Alert</h1>
-  <p class="lead">Answer 3 quick questions. We will send you a message when the price is reached.</p>
-</section>
 
 <form method="post" novalidate>
   {% csrf_token %}

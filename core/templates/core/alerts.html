@@ -1,75 +1,69 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}Price Alerts{% endblock %}
+{% block header %}{% url 'home' as home_url %}{% include "core/partials/page_title.html" with title="Price Alerts" lead="Get notified when your target prices are reached." back=home_url back_label="Back to Home" %}{% endblock %}
 {% block content %}
-<div class="page-head-row">
-  <div>
-    <h1>Price Alerts</h1>
-    <p class="lead">Get notified when your target price is reached.</p>
+<div class="stack">
+  <div style="display:flex;justify-content:flex-end">
+    <a class="btn btn-primary" href="{% url 'alert_new' %}">{% icon 'plus' 18 %} Add Alert</a>
   </div>
-  <a class="btn btn-primary" href="{% url 'alert_new' %}">{% icon 'plus' 22 %} Add Price Alert</a>
-</div>
 
-{% if notifications %}
-<section aria-labelledby="notif-title">
-  <h2 id="notif-title">Messages for you</h2>
-  <ul class="notif-list">
-    {% for n in notifications %}
-      <li class="notif{% if not n.is_read %} is-new{% endif %}">
-        <span class="icon-badge yellow">{% icon 'bell' 20 %}</span>
-        <div class="notif-body">
-          <strong>{{ n.title }}</strong>
-          <p>{{ n.message }}</p>
-          <span class="notif-meta">
-            {% if not n.is_read %}<span class="tag tag-new">New</span>{% endif %}
-            {{ n.created_at|date:"M j, g:i A" }}
-          </span>
-        </div>
-        {% if n.link %}<a class="btn btn-secondary btn-small" href="{{ n.link }}">View price</a>{% endif %}
-      </li>
-    {% endfor %}
-  </ul>
-</section>
-{% endif %}
+  {% if notifications %}
+  <section aria-labelledby="notif-title">
+    <h2 class="section-label" id="notif-title">Messages for you</h2>
+    <ul class="notif-list">
+      {% for n in notifications %}
+        <li class="card notif{% if not n.is_read %} is-new{% endif %}">
+          <span class="icon-badge yellow">{% icon 'bell' 18 %}</span>
+          <div class="notif-body">
+            <strong>{{ n.title }}</strong>
+            <p>{{ n.message }}</p>
+            <span class="notif-meta">{% if not n.is_read %}<span class="tag tag-new">New</span>{% endif %}{{ n.created_at|date:"M j, g:i A" }}</span>
+          </div>
+          {% if n.link %}<a class="btn btn-soft btn-small" href="{{ n.link }}">View price</a>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 
-<section aria-labelledby="alerts-title">
-  <h2 id="alerts-title">Your alerts</h2>
-  {% if items %}
-    <div class="alert-list">
-      {% for item in items %}{% with a=item.alert %}
-        <article class="card alert-card{% if not a.active %} is-off{% endif %}">
-          <div class="alert-main">
+  <section aria-labelledby="alerts-title">
+    <h2 class="section-label" id="alerts-title">Your alerts</h2>
+    {% if items %}
+      <div class="alert-list">
+        {% for item in items %}{% with a=item.alert %}
+          <article class="card alert-card{% if not a.active %} is-off{% endif %}">
             <span class="crop-icon" aria-hidden="true">{{ a.crop.icon }}</span>
-            <div>
+            <div class="alert-main">
               <h3>{{ a.crop.name }}</h3>
               <p class="alert-text">{{ item.text }}</p>
               {% if item.current %}
-                <p class="alert-now">Now {{ item.current.headline.price|peso }}/{{ a.crop.unit }} at {{ item.current.headline.market.name }} · {{ item.current.market_count }} market{{ item.current.market_count|pluralize }}</p>
+                <p class="alert-now">{{ item.current.headline.market.name }} · {{ item.current.market_count }} market{{ item.current.market_count|pluralize }} · now {{ item.current.headline.price|peso }}/{{ a.crop.unit }}</p>
               {% endif %}
             </div>
-          </div>
-          <div class="alert-actions">
-            <form method="post" action="{% url 'alert_toggle' a.id %}">{% csrf_token %}
-              <button class="toggle{% if a.active %} is-on{% endif %}" type="submit"
-                aria-label="{{ a.crop.name }} alert is {{ a.active|yesno:'on,off' }}. Tap to turn it {{ a.active|yesno:'off,on' }}.">
-                <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                <span class="toggle-label">{{ a.active|yesno:"ON,OFF" }}</span>
-              </button>
-            </form>
-            <form method="post" action="{% url 'alert_delete' a.id %}" data-confirm="Delete the {{ a.crop.name }} alert?">{% csrf_token %}
-              <button class="btn btn-text btn-danger" type="submit">{% icon 'trash' 20 %} Delete</button>
-            </form>
-          </div>
-        </article>
-      {% endwith %}{% endfor %}
-    </div>
-  {% else %}
-    <div class="card empty-state">
-      <span class="empty-emoji" aria-hidden="true">🔔</span>
-      <h3>You have no price alerts yet</h3>
-      <p>Tell Ani the price you are waiting for, and we will send you a message when it happens.</p>
-      <a class="btn btn-primary" href="{% url 'alert_new' %}">{% icon 'plus' 22 %} Add Price Alert</a>
-    </div>
-  {% endif %}
-</section>
+            <div class="alert-actions">
+              <form method="post" action="{% url 'alert_delete' a.id %}" data-confirm="Delete the {{ a.crop.name }} alert?">{% csrf_token %}
+                <button class="btn btn-text btn-danger btn-small" type="submit">{% icon 'trash' 18 %}<span>Delete</span></button>
+              </form>
+              <form method="post" action="{% url 'alert_toggle' a.id %}">{% csrf_token %}
+                <button class="toggle{% if a.active %} is-on{% endif %}" type="submit"
+                  aria-label="{{ a.crop.name }} alert is {{ a.active|yesno:'on,off' }}. Tap to turn it {{ a.active|yesno:'off,on' }}.">
+                  <span class="toggle-label">{{ a.active|yesno:"On,Off" }}</span>
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </button>
+              </form>
+            </div>
+          </article>
+        {% endwith %}{% endfor %}
+      </div>
+    {% else %}
+      <div class="card empty-state">
+        <span class="empty-emoji" aria-hidden="true">🔔</span>
+        <h3>You have no price alerts yet</h3>
+        <p>Tell Ani the price you are waiting for, and we will send you a message when it happens.</p>
+        <a class="btn btn-primary" href="{% url 'alert_new' %}">{% icon 'plus' 18 %} Add Alert</a>
+      </div>
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

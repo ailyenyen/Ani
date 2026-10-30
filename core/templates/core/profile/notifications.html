@@ -1,10 +1,9 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}Notification Settings{% endblock %}
+{% block header %}{% url 'profile' as back_url %}{% include "core/partials/page_title.html" with title="Notification Settings" lead="Choose how Ani tells you about your price alerts." back=back_url back_label="Back to Profile" %}{% endblock %}
 {% block content %}
 <div class="narrow">
-  <a class="back-link" href="{% url 'profile' %}">{% icon 'chevron-left' 20 %} Back to Profile</a>
-  <section class="page-head"><h1>Notification Settings</h1><p class="lead">Choose how Ani tells you about your price alerts.</p></section>
 
   <section class="card">
     <p style="display:flex;gap:10px;align-items:flex-start">{% icon 'check' %} <span><strong>Inside Ani:</strong> every alert always appears on your Price Alerts page.</span></p>

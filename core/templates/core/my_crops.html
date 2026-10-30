@@ -1,13 +1,10 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}My Crops{% endblock %}
+{% block header %}{% url 'profile' as back_url %}{% include "core/partials/page_title.html" with title="My Crops" lead="The crops you check often, with their latest price." back=back_url back_label="Back to Profile" %}{% endblock %}
 {% block content %}
-<div class="page-head-row">
-  <div>
-    <h1>My Crops</h1>
-    <p class="lead">The crops you check often, with their latest price{% if current_user.location %} in {{ current_user.location }}{% endif %}.</p>
-  </div>
-  <a class="btn btn-primary" href="{% url 'my_crops_add' %}">{% icon 'plus' 22 %} Add Crop</a>
+<div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+  <a class="btn btn-primary" href="{% url 'my_crops_add' %}">{% icon 'plus' 18 %} Add Crop</a>
 </div>
 
 {% if items %}
@@ -20,7 +17,7 @@
             <div><h2>{{ crop.name }}</h2><span class="muted">{{ crop.english_name }}</span></div>
           </div>
           {% if s %}
-            <p class="price-big">{{ s.headline.price|peso }}<span class="unit">/{{ crop.unit }}</span></p>
+            <p class="price-big" style="font-size:1.625rem">{{ s.headline.price|peso }}<span class="unit">/{{ crop.unit }}</span></p>
             <p class="source-line">{% icon 'shield' 18 %} Source: {{ s.headline.source }} · {{ s.headline.market.location }}</p>
             <p class="cc-meta">{% include "core/partials/change.html" with row=s.headline %}<span class="muted">{{ s.headline.date|updated_label }}</span></p>
           {% else %}

@@ -24,7 +24,7 @@ class ViewTests(DatabaseTestCase):
 
     def test_compare_shows_best_price(self, _today):
         response = self.client.get("/compare/?crop=palay&location=Batangas")
-        self.assertContains(response, "Kadiwa: <span class=\"price\">₱24.00/kg</span>", html=False)
+        self.assertContains(response, "<strong>Kadiwa — ₱24.00/kg</strong>", html=False)
 
     def test_private_pages_need_login(self, _today):
         for url in ["/alerts/", "/alerts/new/", "/my-crops/", "/profile/"]:
