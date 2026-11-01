@@ -1,0 +1,214 @@
+{% load static ani_tags %}<!doctype html>
+<html lang="en">
+<head>
+  {% include "core/partials/head.html" %}
+  <title>Ani · Better Prices. Stronger Farmers.</title>
+</head>
+<body class="landing">
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="lp-header" data-lp-header>
+    <div class="lp-wrap lp-header-inner">
+      <a class="brand" href="{% url 'landing' %}" aria-label="Ani home">{% include "core/partials/logo.html" with w=73 h=38 alt="" %}</a>
+      <nav class="lp-nav" aria-label="Page sections">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#prices">Today's prices</a>
+        <a href="#sources">Sources</a>
+      </nav>
+      <div class="lp-header-actions">
+        {% include "core/partials/theme_toggle.html" %}
+        {% if current_user %}
+          <a class="btn btn-primary btn-small" href="{% url 'home' %}">Open dashboard</a>
+        {% else %}
+          <a class="btn btn-text btn-small lp-login" href="{% url 'login' %}">Log in</a>
+          <a class="btn btn-primary btn-small" href="{% url 'home' %}">Check prices</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="lp-hero">
+      <div class="lp-wrap lp-hero-grid">
+        <div class="lp-hero-copy">
+          <p class="lp-kicker anim-rise" style="--d:0">{% icon 'sprout' 16 %} Crop prices for Filipino farmers</p>
+          <h1 class="anim-rise" style="--d:1">Know the fair price <span class="lp-accent">before you sell.</span></h1>
+          <p class="lp-lead anim-rise" style="--d:2">Ani brings crop prices from DA Bantay Presyo, Kadiwa and local markets into one simple place. See today's price, find the market that pays the most, and get a message when your target price is reached.</p>
+          <div class="lp-cta anim-rise" style="--d:3">
+            <a class="btn btn-primary btn-lg" href="{% url 'home' %}">Check today's prices {% icon 'arrow-right' 18 %}</a>
+            {% if not current_user %}<a class="btn btn-secondary btn-lg" href="{% url 'signup' %}">Create free account</a>{% endif %}
+          </div>
+          <ul class="lp-trust anim-rise" style="--d:4">
+            <li>{% icon 'check' 16 %} Free to use</li>
+            <li>{% icon 'check' 16 %} Works on any phone</li>
+            <li>{% icon 'check' 16 %} Every price shows its source</li>
+          </ul>
+          {% if show_sample_notice %}<p class="notice-sample anim-rise" style="--d:5">{% icon 'info' 16 %}<span><strong>Sample prices.</strong> This version uses example data, not real market prices.</span></p>{% endif %}
+        </div>
+
+        <div class="lp-hero-visual anim-rise" style="--d:2" aria-label="Preview of today's prices">
+          <div class="lp-sun" aria-hidden="true"></div>
+          <div class="card lp-preview">
+            <div class="lp-preview-head">
+              <div>
+                <p class="eyebrow">Today in {{ location }}</p>
+                <h2>Latest crop prices</h2>
+              </div>
+              <span class="lp-live"><span class="lp-live-dot" aria-hidden="true"></span>{{ last_update|updated_label|default:"Updated daily" }}</span>
+            </div>
+            <ul class="row-list">
+              {% for s in preview %}{% with row=s.headline %}
+                <li class="row-item">
+                  <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
+                  <span class="row-main"><strong>{{ s.crop.name }}</strong><span>{{ row.market.name }}</span></span>
+                  <span class="row-end"><span class="price-md">{{ row.price|peso }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
+                </li>
+              {% endwith %}{% empty %}
+                <li class="row-item"><span class="row-main"><strong>Prices are on their way</strong><span>Check back soon.</span></span></li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% if best %}
+          <div class="lp-badge" aria-hidden="true">
+            <span class="icon-badge solid">{% icon 'check' 18 %}</span>
+            <span><small>Best {{ best.crop.name }} price</small><strong>{{ best.market.name }} · {{ best.price|peso }}/kg</strong></span>
+          </div>
+          {% endif %}
+          <img class="lp-palay" src="{% static 'core/img/palay.svg' %}" alt="" aria-hidden="true">
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-stats" aria-label="Ani in numbers">
+      <div class="lp-wrap"><div class="lp-stats-grid">
+        <div class="lp-stat reveal"><strong data-count="{{ stats.crop_count }}">{{ stats.crop_count }}</strong><span>crops tracked</span></div>
+        <div class="lp-stat reveal"><strong data-count="{{ stats.market_count }}">{{ stats.market_count }}</strong><span>markets monitored</span></div>
+        <div class="lp-stat reveal"><strong data-count="{{ stats.location_count }}">{{ stats.location_count }}</strong><span>provinces</span></div>
+        <div class="lp-stat reveal"><strong data-count="{{ stats.source_count }}">{{ stats.source_count }}</strong><span>public price sources</span></div>
+      </div></div>
+    </section>
+
+    <section class="lp-section" id="features" aria-labelledby="features-title">
+      <div class="lp-wrap">
+        <div class="lp-section-head reveal">
+          <p class="eyebrow">What Ani does</p>
+          <h2 id="features-title">Everything you need to sell at a better price</h2>
+          <p class="lp-lead">No complicated charts. Just the answers farmers ask every day.</p>
+        </div>
+        <div class="lp-features">
+          <article class="card lp-feature reveal">
+            <span class="icon-badge solid">{% icon 'bars' 22 %}</span>
+            <h3>Latest crop prices</h3>
+            <p>See today's price per kilo for palay, kamatis, sili, mais and more, near where you sell.</p>
+          </article>
+          <article class="card lp-feature reveal">
+            <span class="icon-badge solid">{% icon 'compare' 22 %}</span>
+            <h3>Market comparison</h3>
+            <p>Compare DA Bantay Presyo, Kadiwa and local markets side by side. The highest price is marked.</p>
+          </article>
+          <article class="card lp-feature reveal">
+            <span class="icon-badge solid">{% icon 'bell' 22 %}</span>
+            <h3>Price alerts</h3>
+            <p>Tell Ani your target price. We send you a message when the price goes above or below it.</p>
+          </article>
+          <article class="card lp-feature reveal">
+            <span class="icon-badge solid">{% icon 'shield' 22 %}</span>
+            <h3>Trusted sources</h3>
+            <p>Prices come from public government and market sources, and every price shows where it came from.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="how" aria-labelledby="how-title">
+      <div class="lp-wrap">
+        <div class="lp-section-head reveal">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">Three steps. No tutorial needed.</h2>
+        </div>
+        <ol class="lp-steps">
+          <li class="reveal">
+            <span class="lp-step-num">1</span>
+            <h3>Choose your crop</h3>
+            <p>Pick a crop and your province. Ani shows the latest price right away.</p>
+          </li>
+          <li class="reveal">
+            <span class="lp-step-num">2</span>
+            <h3>Compare markets</h3>
+            <p>See every market's price in one view and find out where your crop sells highest.</p>
+          </li>
+          <li class="reveal">
+            <span class="lp-step-num">3</span>
+            <h3>Get an alert</h3>
+            <p>Set your target price once. Ani tells you when it's reached, so you know when to sell.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="lp-section" id="prices" aria-labelledby="prices-title">
+      <div class="lp-wrap">
+        <div class="lp-section-head lp-section-head-row reveal">
+          <div>
+            <p class="eyebrow">Today's prices</p>
+            <h2 id="prices-title">Prices in {{ location }}</h2>
+          </div>
+          <a class="btn btn-soft" href="{% url 'prices' %}">See all prices {% icon 'arrow-right' 16 %}</a>
+        </div>
+        <div class="card flush reveal">
+          {% if today %}
+            {% include "core/partials/price_table.html" with summaries=today variant="prices" %}
+          {% else %}
+            <div class="empty-state"><h3>No prices yet</h3><p>Prices will appear here as soon as they are collected.</p></div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="sources" aria-labelledby="sources-title">
+      <div class="lp-wrap lp-sources">
+        <div class="reveal">
+          <p class="eyebrow">Where prices come from</p>
+          <h2 id="sources-title">Public sources, shown openly</h2>
+          <p class="lp-lead">Ani collects prices from public price lists and bulletins, checks them, and shows each one with its source and date. Ani does not buy, sell or predict prices.</p>
+        </div>
+        <ul class="lp-source-list">
+          <li class="card reveal"><span class="market-dot m0" aria-hidden="true"></span><div><strong>DA Bantay Presyo</strong><span>Price monitoring by the Department of Agriculture</span></div></li>
+          <li class="card reveal"><span class="market-dot m1" aria-hidden="true"></span><div><strong>Kadiwa</strong><span>Kadiwa center price lists</span></div></li>
+          <li class="card reveal"><span class="market-dot m2" aria-hidden="true"></span><div><strong>Local market bulletins</strong><span>Prices posted by public and local markets</span></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="lp-final reveal" aria-labelledby="final-title">
+      <div class="lp-wrap lp-final-inner">
+        <div>
+          <h2 id="final-title">Better Prices. Stronger Farmers.</h2>
+          <p>Open Ani on any phone and check today's price in seconds.</p>
+        </div>
+        <div class="lp-cta">
+          <a class="btn btn-sun btn-lg" href="{% url 'home' %}">Check today's prices</a>
+          {% if not current_user %}<a class="btn btn-ghost btn-lg" href="{% url 'signup' %}">Create free account</a>{% endif %}
+        </div>
+      </div>
+      <img class="lp-final-art" src="{% static 'core/img/landscape.svg' %}" alt="" aria-hidden="true">
+    </section>
+  </main>
+
+  <footer class="lp-footer">
+    <div class="lp-wrap lp-footer-inner">
+      <a class="brand" href="{% url 'landing' %}" aria-label="Ani home">{% include "core/partials/logo.html" with w=62 h=32 alt="" %}</a>
+      <nav aria-label="Footer">
+        <a href="{% url 'home' %}">Dashboard</a>
+        <a href="{% url 'prices' %}">Market Prices</a>
+        <a href="{% url 'compare' %}">Compare Markets</a>
+        <a href="{% url 'help' %}">Help &amp; Support</a>
+      </nav>
+      <p>Prices are a guide. The price you are offered can differ because of quality, size and quantity.</p>
+    </div>
+  </footer>
+
+  <script src="{% static 'core/js/app.js' %}" defer></script>
+</body>
+</html>

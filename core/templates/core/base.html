@@ -1,32 +1,35 @@
 {% load static ani_tags %}<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  {% include "core/partials/head.html" %}
   <title>{% block title %}Crop prices{% endblock %} · Ani</title>
-  <meta name="description" content="Ani shows crop prices from DA Bantay Presyo, Kadiwa and local markets in one place. Better Prices. Stronger Farmers.">
-  <meta name="theme-color" content="#FFFFFF">
-  <link rel="icon" href="{% static 'core/img/logo-mark.svg' %}" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="{% static 'core/css/ani.css' %}">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
   <div class="app">
-    <aside class="sidebar" aria-label="Main menu">
-      <a class="brand" href="{% url 'home' %}">
-        <img src="{% static 'core/img/logo-wordmark.svg' %}" alt="Ani home" width="77" height="40">
-      </a>
+    <aside class="sidebar" id="sidebar" aria-label="Main menu">
+      <div class="sidebar-top">
+        <a class="brand" href="{% url 'home' %}" aria-label="Ani home">
+          <span class="brand-full">{% include "core/partials/logo.html" with w=77 h=40 alt="" %}</span>
+          <span class="brand-mark">
+            <img class="logo-on-light" src="{% static 'core/img/logo-mark.svg' %}" alt="" width="40" height="38">
+            <img class="logo-on-dark" src="{% static 'core/img/logo-mark-dark.svg' %}" alt="" width="40" height="38">
+          </span>
+        </a>
+        <button class="icon-btn sidebar-toggle" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="true">
+          <span class="when-wide">{% icon 'panel' 20 %}</span>
+          <span class="when-narrow">{% icon 'close' 22 %}</span>
+          <span class="sr-only" data-sidebar-label>Collapse menu</span>
+        </button>
+      </div>
       <nav>
         <ul class="side-nav">
-          <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 20 %} Home</a></li>
-          <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 20 %} Market Prices</a></li>
-          <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' 20 %} Compare Markets</a></li>
-          <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 20 %} Price Alerts</a></li>
-          <li><a href="{% url 'my_crops' %}" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' 20 %} My Crops</a></li>
-          <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' 20 %} Profile</a></li>
+          <li><a href="{% url 'home' %}" title="Home" {% nav_active 'home' %}>{% icon 'home' 20 %}<span class="nav-label">Home</span></a></li>
+          <li><a href="{% url 'prices' %}" title="Market Prices" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 20 %}<span class="nav-label">Market Prices</span></a></li>
+          <li><a href="{% url 'compare' %}" title="Compare Markets" {% nav_active 'compare' %}>{% icon 'compare' 20 %}<span class="nav-label">Compare Markets</span></a></li>
+          <li><a href="{% url 'alerts' %}" title="Price Alerts" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 20 %}<span class="nav-label">Price Alerts</span></a></li>
+          <li><a href="{% url 'my_crops' %}" title="My Crops" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' 20 %}<span class="nav-label">My Crops</span></a></li>
+          <li><a href="{% url 'profile' %}" title="Profile" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' 20 %}<span class="nav-label">Profile</span></a></li>
         </ul>
       </nav>
       <div class="side-help">
@@ -35,14 +38,21 @@
         <p>We're here for you.</p>
         <a class="btn btn-primary btn-small btn-block" href="{% url 'help' %}">Contact Us</a>
       </div>
+      <a class="side-help-mini" href="{% url 'help' %}" title="Help &amp; Support">{% icon 'help' 20 %}<span class="sr-only">Help &amp; Support</span></a>
     </aside>
+    <div class="drawer-overlay" data-sidebar-close hidden></div>
 
     <div class="main-col">
       <header class="topbar">
         <div class="appbar">
-          <a class="brand" href="{% url 'home' %}"><img src="{% static 'core/img/logo-wordmark.svg' %}" alt="Ani home" width="65" height="34"></a>
+          <div class="appbar-start">
+            <button class="icon-btn menu-btn" type="button" data-drawer-open aria-controls="sidebar" aria-expanded="false">
+              {% icon 'menu' 24 %}<span class="sr-only">Open menu</span>
+            </button>
+            <a class="brand" href="{% url 'home' %}" aria-label="Ani home">{% include "core/partials/logo.html" with w=65 h=34 alt="" %}</a>
+          </div>
           <div class="topbar-actions">
-            <a class="icon-btn help-link" href="{% url 'help' %}">{% icon 'help' 22 %}<span class="sr-only">Help</span></a>
+            {% include "core/partials/theme_toggle.html" %}
             {% if current_user %}
               <a class="icon-btn" href="{% url 'alerts' %}">
                 {% icon 'bell' 22 %}
@@ -83,13 +93,13 @@
       </main>
 
       <footer class="site-footer">
-        <p><strong>Ani</strong> · Better Prices. Stronger Farmers.</p>
+        <p><strong>Ani</strong> · Better Prices. Stronger Farmers. · <a href="{% url 'about' %}">About Ani</a></p>
         <p>Prices come from public sources: DA Bantay Presyo, Kadiwa price lists and local market bulletins. <a href="{% url 'help' %}">Where do prices come from?</a></p>
       </footer>
     </div>
   </div>
 
-  <nav class="bottom-nav" aria-label="Main menu">
+  <nav class="bottom-nav" aria-label="Main menu (shortcuts)">
     <ul>
       <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 24 %}<span>Home</span></a></li>
       <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 24 %}<span>Markets</span></a></li>

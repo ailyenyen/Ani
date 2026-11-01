@@ -68,6 +68,39 @@ def _owned_alert(request, alert_id):
 
 # --- Main pages -------------------------------------------------------------
 
+def landing(request):
+    """Public page that explains Ani. Signed-in users go straight to their dashboard from "/"."""
+    db, user = request.db, request.ani_user
+    if user is not None and request.resolver_match.url_name == "landing":
+        return redirect("home")
+
+    locations = services.list_locations(db)
+    location = _location_for(request, locations, require_specific=True)
+    summaries = services.summarize_by_crop(services.latest_prices(db, location=location or None))
+    best = None
+    if summaries:
+        compare_rows = services.compare_markets(db, summaries[0].crop, location)
+        best = compare_rows[0] if compare_rows else None
+
+    return render(
+        request,
+        "core/landing.html",
+        {
+            "location": location,
+            "preview": summaries[:4],
+            "today": summaries[:6],
+            "best": best,
+            "stats": {
+                "crop_count": len(services.list_crops(db)),
+                "market_count": db.scalar(select(func.count(Market.id))),
+                "location_count": len(locations),
+                "source_count": len(services.list_sources(db)),
+            },
+            "last_update": services.last_price_date(db),
+        },
+    )
+
+
 def home(request):
     db, user = request.db, request.ani_user
     locations = services.list_locations(db)
@@ -541,7 +574,7 @@ def signup_view(request):
 def logout_view(request):
     auth.logout(request)
     messages.success(request, "You are now logged out.")
-    return redirect("home")
+    return redirect("landing")
 
 
 # --- Errors -----------------------------------------------------------------

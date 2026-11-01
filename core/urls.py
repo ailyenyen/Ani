@@ -3,7 +3,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path("", views.landing, name="landing"),
+    path("about/", views.landing, name="about"),
+    path("home/", views.home, name="home"),
     path("prices/", views.market_prices, name="prices"),
     path("crops/<slug:slug>/", views.crop_detail, name="crop_detail"),
     path("compare/", views.compare, name="compare"),

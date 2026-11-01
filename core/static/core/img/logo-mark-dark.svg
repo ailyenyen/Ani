@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 80" role="img" aria-label="Ani">
+  <defs>
+    <clipPath id="ani-mark-a-dark"><path d="M45 6c-6 0-9.5 3.5-12 9L12 64c-2.2 5.5 1 10 7 10h52c6 0 9.2-4.5 7-10L57 15c-2.5-5.5-6-9-12-9Z"/></clipPath>
+  </defs>
+  <path fill="#EAF3E6" d="M45 6c-6 0-9.5 3.5-12 9L12 64c-2.2 5.5 1 10 7 10h52c6 0 9.2-4.5 7-10L57 15c-2.5-5.5-6-9-12-9Z"/>
+  <path fill="#185B43" d="M45 21c-2.2 0-3.6 1.4-4.5 3.6L30 52h30L49.5 24.6C48.6 22.4 47.2 21 45 21Z"/>
+  <circle cx="45" cy="39" r="7" fill="#FBC02D"/>
+  <g clip-path="url(#ani-mark-a-dark)">
+    <path d="M0 80V54c16-9 36-10 52-2 9 5 16 14 20 28Z" fill="#66BB6A"/>
+    <path d="M4 63c15-8 32-9 46-2 7 3.5 12 9 16 17" stroke="#13221B" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M4 72c13-6 28-7 40-1 5 2.5 9 6 12 10" stroke="#A5D6A7" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M8 80c10-4 21-4 30 0" stroke="#13221B" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M3 62C0 47 8 36 22 33c3 14-5 25-19 29Z" fill="#81C784"/>
+  <path d="M4.5 60.5C9 52 14 44 20 36.5" stroke="#13221B" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+</svg>

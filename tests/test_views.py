@@ -16,7 +16,7 @@ class ViewTests(DatabaseTestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_public_pages(self, _today):
-        for url in ["/", "/prices/", "/prices/?crop=kamatis&when=week&location=all", "/crops/kamatis/",
+        for url in ["/", "/about/", "/home/", "/prices/", "/prices/?crop=kamatis&when=week&location=all", "/crops/kamatis/",
                     "/crops/palay/?range=90&location=Laguna", "/compare/?crop=palay&location=Batangas",
                     "/help/", "/login/", "/signup/"]:
             with self.subTest(url=url):
@@ -25,6 +25,17 @@ class ViewTests(DatabaseTestCase):
     def test_compare_shows_best_price(self, _today):
         response = self.client.get("/compare/?crop=palay&location=Batangas")
         self.assertContains(response, "<strong>Kadiwa — ₱24.00/kg</strong>", html=False)
+
+    def test_landing_page(self, _today):
+        response = self.client.get("/")
+        self.assertContains(response, "Know the fair price")
+        self.assertContains(response, "Kadiwa")  # best Palay price in the live preview
+        self.assertContains(response, 'href="/home/"')
+
+    def test_landing_sends_signed_in_users_to_dashboard(self, _today):
+        self.login()
+        self.assertRedirects(self.client.get("/"), "/home/", fetch_redirect_response=False)
+        self.assertEqual(self.client.get("/about/").status_code, 200)
 
     def test_private_pages_need_login(self, _today):
         for url in ["/alerts/", "/alerts/new/", "/my-crops/", "/profile/"]:
