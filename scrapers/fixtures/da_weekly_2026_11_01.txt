@@ -1,0 +1,128 @@
+Department of Agriculture
+Bantay Presyo Monitoring
+For the period of October 26 - November 1, 2026
+Weekly Average Retail Price of Selected Agri-Fishery Commodities in NCR Markets
+COMMODITY SPECIFICATION UNIT WEEKLY AVERAGE PRICE
+KADIWA RICE-FOR-ALL
+P20 Benteng Bigas Meron Naᵃ kg 20.00
+IMPORTED COMMERCIAL RICE
+Basmati kg 184.72
+Glutinous kg 61.46
+Japonica/Jasponica kg 60.11
+Other Special Rice White Rice kg 60.72
+Premium 5% broken kg 55.73
+Well Milled 1-19% bran streak kg 48.63
+Regular Milled 20-40% bran streak kg 45.42
+LOCAL COMMERCIAL RICE
+Basmati kg -
+Glutinous kg 73.21
+Japonica/Jasponica kg -
+Other Special Rice White Rice kg 60.23
+Premium 5% broken kg 54.09
+Well Milled 1-19% bran streak kg 49.08
+Regular Milled 20-40% bran streak kg 45.42
+CORN PRODUCTS
+Corn (White) Cob, Glutinous kg 113.92
+Corn (Yellow) Cob, Sweet Corn kg 101.34
+Corn Grits (White, Food Grade) kg 95.00
+Corn Grits (Yellow, Food Grade) kg 95.56
+Corn Cracked (Yellow, Feed Grade) kg 47.81
+Corn Grits (Feed Grade) kg 45.52
+LEGUMES
+Mungbean kg 147.03
+FISH PRODUCTS
+Alumahan (Indian Mackerel) Medium (4-6 pcs/kg) kg 341.09
+Bangus, Large Large (1-2 pcs) kg 272.70
+Bangus, Medium Medium (3-4 pcs/kg) kg 245.60
+Bonito (Frigate Tuna) kg -
+Galunggong, Local Male, Medium (12-14 pcs/kg) kg 301.52
+Galunggong, Imported Male, Medium (12-14 pcs/kg) kg -
+Salmon Belly, Local kg -
+Sardines (Tamban) kg 212.22
+Squid (Pusit Bisaya), Local Medium kg 512.94
+Tambakol (Yellow-Fin Tuna), Local Medium, Fresh or Chilled kg 289.51
+Tilapia Medium (5-6 pcs/kg) kg 157.12
+BEEF PRODUCTS
+Beef Brisket, Local Meat with Bones kg 447.07
+Beef Rump, Local Lean Meat/ Tapadera kg 504.25
+Pork Belly (Liempo), Local kg 359.55
+Pork Belly (Liempo), Imported kg 304.60
+Pork Picnic Shoulder (Kasim), Local kg 303.66
+Pork Picnic Shoulder (Kasim), Imported kg 242.98
+Whole Chicken, Local Fully Dressed kg 205.40
+Chicken Egg (White, Pewee) 41-45 grams/pc pc 6.80
+Chicken Egg (White, Extra Small) 46-50 grams/pc pc 7.10
+Chicken Egg (White, Small) 51-55 grams/pc pc 7.69
+Chicken Egg (White, Medium) 56-60 grams/pc pc 8.23
+Chicken Egg (White, Large) 61-65 grams/pc pc 8.82
+Chicken Egg (White, Extra Large) 66-70 grams/pc pc 9.49
+Chicken Egg (White, Jumbo) 71> grams/pc pc 10.12
+Chicken Egg (Brown, Medium) Medium pc 10.43
+Chicken Egg (Brown, Large) Large pc 11.16
+Chicken Egg (Brown, Extra Large) Extra Large pc 11.55
+LOWLAND VEGETABLES
+Ampalaya 4-5 pcs/kg kg 115.70
+Chilli (Green), Local Haba/Panigang kg 166.27
+Eggplant 3-4 Small Bundles kg 99.88
+Native Pechay 3-4 Small Bundles kg 97.57
+Pole Sitao 3-4 Small Bundles kg 116.10
+Squash Suprema Variety kg 61.11
+Tomato 15-18 pcs/kg kg 99.58
+HIGHLAND VEGETABLES
+Bell Pepper (Green), Local Medium (151-250gm/pc) kg 279.64
+Bell Pepper (Red), Local Medium (151-250gm/pc) kg 261.02
+Broccoli, Local Medium (8-10 cm diameter/bunch hd) kg -
+Cauliflower, Local Medium (8-10 cm diameter/bunch hd) kg 324.75
+Cabbage (Rare Ball) 510 gm - 1 kg/head kg 171.63
+Cabbage (Scorpio) 750 gm - 1 kg/head kg 169.47
+Cabbage (Wonder Ball) 510 gm - 1 kg/head kg 173.80
+Carrots, Local 8-10 pcs/kg kg 150.09
+Celery Medium (501-800 g) kg 285.36
+Chayote Medium (301-400 g) kg 53.36
+Habichuelas/Baguio Beans, Local kg 126.23
+Pechay Baguio kg 108.65
+Lettuce (Green Ice) kg 192.97
+Lettuce (Iceberg) Medium (301-450 cm diameter/bunch hd) kg 237.32
+Lettuce (Romaine) kg 180.32
+White Potato, Local 10-12 pcs/kg kg 177.54
+SPICES
+Chilli (Red), Local Tingala kg 334.08
+Garlic, Native/Local kg 352.14
+Garlic, Imported kg 151.15
+Ginger, Local Fairly well-matured, Medium (150-300 gm) kg 196.00
+Red Onion, Local 13-15 pcs/kg kg 125.26
+Red Onion, Imported kg 120.00
+White Onion, Local kg 134.76
+White Onion, Imported kg 185.02
+FRUITS
+Avocado kg 485.39
+Banana (Lakatan) 8-10 pcs/kg kg 95.99
+Banana (Latundan) 10-12 pcs/kg kg 77.85
+Banana (Saba) kg 66.36
+Calamansi kg 107.42
+Mango (Carabao) Ripe, 3-4 pcs/kg kg 257.98
+Melon kg 104.60
+Papaya Solo, Ripe, 2-3 pcs/kg kg 82.29
+Pomelo kg 187.91
+Watermelon kg 78.36
+OTHER BASIC COMMODITIES
+Salt (Rock) kg 22.75
+Salt (Iodized) kg 44.04
+Sugar (Refined) kg 81.21
+Sugar (Washed) kg 74.80
+Sugar (Brown) kg 72.28
+Cooking Oil (Palm) 350 ml/bottle ml 40.28
+Cooking Oil (Palm) 1 Liter/bottle L 101.84
+Cooking Oil (Coconut) 350 ml/bottle ml 59.31
+Cooking Oil (Coconut) 1 Liter/bottle L 152.43
+Markets Covered: Agora Public Market, Alabang Central Market, Balintawak Cloverleaf Market, Bicutan Market, Cartimar Market, Commonwealth Market,
+Dagonoy Market, Farmers Market, Grace Marketplace, Guadalupe Commercial Complex, Hulong Duhat Public Market, KLMV New Karuhatan Market, La
+Huerta Public Market, Malabon Central Market, Mandaluyong Public Market I, Mandaluyong Public Market II, Marikina Public Market, Maypajo Public Market,
+Mega Q-Mart, Muñoz Market, Murphy Public Market, Mutya ng Pasig Mega Market, Navotas Agora Complex, New Las Piñas City Public Market, New Marulas
+Public Market, New Parang Market, North Diversion Market, Paco Market, Pasay Public Market, Poblacion Public Market, Pritil Market, Quinta Market, San
+Andres Market, Suki Market Moonwalk, Taguig People's Market, and Trabajo Market
+Source: DA Agribusiness and Marketing Assistance Service (DA-AMAS)
+Note: (-) not sold in the market
+monitoring of basmati, japonica, and glutinous rice varieties started on November 17, 2025
+monitoring of mungbean started on December 11, 2025
+(ᵃ) available only in 5 markets (Kamuning, La Huerta, Las Piñas, Navotas Agora, and Pasay)

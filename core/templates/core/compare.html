@@ -3,6 +3,7 @@
 {% block title %}Compare Markets{% endblock %}
 {% block header %}{% url 'home' as home_url %}{% include "core/partials/page_title.html" with title="Compare Markets" lead="See where your crop is priced highest." back=home_url back_label="Back to Home" %}{% endblock %}
 {% block content %}
+{% if live_reports %}<p class="card"><a class="btn btn-primary" href="{% url 'compare' %}">Regional report · lowest prices &amp; source comparison</a><br>This page compares weekly report series. Open the Compare Markets to filter individual market prices across regions and find the lowest reported prices.</p>{% endif %}
 <form class="filter-bar" method="get" action="{% url 'compare' %}" style="margin-bottom:16px">
   <label class="sr-only" for="c-crop">Crop</label>
   <select id="c-crop" name="crop" data-autosubmit>
@@ -39,6 +40,7 @@
       {% icon 'check' 20 %}
       <span>Highest price: <strong>{{ best.market.name }} — {{ best.price|peso }}/{{ crop.unit }}</strong></span>
       <span class="muted">Source: {{ best.source }} · {{ best.date|updated_label }}</span>
+      {% if best.evidence %}<a href="{{ best.evidence.source_url }}" target="_blank" rel="noopener">Official report</a>{% endif %}
     </p>
   </section>
 

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
 from core.alerts import check_alerts
@@ -22,6 +23,15 @@ class Command(BaseCommand):
         parser.add_argument("--no-alerts", action="store_true", help="Don't check price alerts afterwards.")
 
     def handle(self, *args, sources, offline, no_alerts, **options):
+        if not settings.ANI_SAMPLE_DATA_NOTICE:
+            if offline or any(s not in {"da_bantay_presyo", "kadiwa"} for s in sources):
+                raise CommandError("Live mode supports verified DA reports only; offline/local fixtures are disabled.")
+            call_command("sync_live", stdout=self.stdout, stderr=self.stderr)
+            if not no_alerts:
+                with session_scope() as db:
+                    sent = check_alerts(db)
+                    self.stdout.write(f"Price alerts sent: {len(sent)}")
+            return
         try:
             scrapers = build_scrapers(
                 sources,

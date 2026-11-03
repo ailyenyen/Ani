@@ -1,4 +1,5 @@
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 
 from core import seed as seed_data
 from core.db import create_tables, session_scope
@@ -13,6 +14,8 @@ class Command(BaseCommand):
         parser.add_argument("--no-demo-user", action="store_true", help="Don't create the demo account.")
 
     def handle(self, *args, days, reset, no_demo_user, **options):
+        if not settings.ANI_SAMPLE_DATA_NOTICE:
+            raise CommandError("Sample seeding is disabled in live mode. Use a separate sample database.")
         create_tables()
         with session_scope() as db:
             if reset:

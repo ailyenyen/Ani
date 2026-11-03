@@ -80,7 +80,7 @@ class BaseScraper(ABC):
 
     def __init__(self, url="", offline=False, timeout=20, user_agent="AniPriceBot/1.0", http=None):
         self.url = url
-        self.offline = offline or not url
+        self.offline = offline
         self.timeout = timeout
         self.user_agent = user_agent
         self.http = http or requests
@@ -92,6 +92,8 @@ class BaseScraper(ABC):
             path = FIXTURES_DIR / self.fixture_name
             logger.info("[%s] Reading sample page %s (offline mode)", self.slug, path.name)
             return path.read_text(encoding="utf-8")
+        if not self.url:
+            raise ScraperError("Source URL is not configured. Use --offline explicitly for sample data.")
         logger.info("[%s] Fetching %s", self.slug, self.url)
         try:
             response = self.http.get(

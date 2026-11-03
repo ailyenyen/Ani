@@ -116,6 +116,63 @@ class CropPrice(Base):
 
     crop: Mapped[Crop] = relationship(back_populates="prices")
     market: Mapped[Market] = relationship(back_populates="prices")
+    evidence: Mapped[Optional["PriceEvidence"]] = relationship(uselist=False)
+    regional_listing: Mapped[Optional["CatalogQuote"]] = relationship(back_populates="price", uselist=False)
+
+
+class PriceEvidence(Base):
+    """Exact publication and original row behind a live price (separate additive table)."""
+    __tablename__ = "price_evidence"
+
+    price_id: Mapped[int] = mapped_column(ForeignKey("crop_prices.id", ondelete="CASCADE"), primary_key=True)
+    source_url: Mapped[str] = mapped_column(Text)
+    report_start: Mapped[date_type] = mapped_column(Date)
+    report_end: Mapped[date_type] = mapped_column(Date)
+    sha256: Mapped[str] = mapped_column(String(64))
+    raw_row: Mapped[str] = mapped_column(Text)
+    note: Mapped[str] = mapped_column(Text, default="")
+
+
+class RegionalQuote(Base):
+    """Market-level retail quotes; kept separate from weekly regional averages."""
+    __tablename__ = "regional_quotes"
+    __table_args__ = (UniqueConstraint("source", "region", "market", "product_key", "date", name="uq_regional_quote"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source: Mapped[str] = mapped_column(String(100), index=True)
+    region: Mapped[str] = mapped_column(String(100), index=True)
+    market: Mapped[str] = mapped_column(String(160))
+    category: Mapped[str] = mapped_column(String(60))
+    product_key: Mapped[str] = mapped_column(String(64), index=True)
+    product: Mapped[str] = mapped_column(String(180))
+    specification: Mapped[str] = mapped_column(String(200))
+    unit: Mapped[str] = mapped_column(String(20), default="kg")
+    low: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    high: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    date: Mapped[date_type] = mapped_column(Date, index=True)
+    collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    source_url: Mapped[str] = mapped_column(Text)
+    sha256: Mapped[str] = mapped_column(String(64))
+    raw_row: Mapped[str] = mapped_column(Text)
+
+
+class CatalogQuote(Base):
+    __tablename__ = "catalog_quotes"
+    price_id: Mapped[int] = mapped_column(ForeignKey("crop_prices.id", ondelete="CASCADE"), primary_key=True)
+    quote_id: Mapped[int] = mapped_column(ForeignKey("regional_quotes.id", ondelete="CASCADE"), unique=True)
+    price: Mapped[CropPrice] = relationship(back_populates="regional_listing")
+    quote: Mapped[RegionalQuote] = relationship()
+
+
+class RegionalImport(Base):
+    __tablename__ = "regional_imports"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source: Mapped[str] = mapped_column(String(100))
+    region: Mapped[str] = mapped_column(String(100))
+    category: Mapped[str] = mapped_column(String(60))
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    status: Mapped[str] = mapped_column(String(20))
+    count: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str] = mapped_column(Text, default="")
 
 
 class SavedCrop(Base):

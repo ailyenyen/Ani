@@ -5,3 +5,5 @@ __pycache__/
 *.sqlite3
 logs/*.log*
 staticfiles/
+data/reports/
+data/regional/

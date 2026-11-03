@@ -73,8 +73,10 @@
         <div class="page-title">{% block header %}{% endblock %}</div>
       </header>
 
-      {% if show_sample_notice or messages %}
+      {% if show_sample_notice or live_reports or messages %}
         <div class="notice-wrap">
+          {% if live_reports %}
+          {% endif %}
           {% if show_sample_notice %}
             <p class="notice-sample" role="note">{% icon 'info' 16 %}<span><strong>Sample prices.</strong> This version uses example data, not real market prices.</span></p>
           {% endif %}
@@ -94,7 +96,7 @@
 
       <footer class="site-footer">
         <p><strong>Ani</strong> · Better Prices. Stronger Farmers. · <a href="{% url 'about' %}">About Ani</a></p>
-        <p>Prices come from public sources: DA Bantay Presyo, Kadiwa price lists and local market bulletins. <a href="{% url 'help' %}">Where do prices come from?</a></p>
+        <p>{% if live_reports %}Sources: DA-AMAS weekly reports, the DA Bantay Presyo regional portal, and Infanta LGU price monitoring. Source availability varies by region and date.{% else %}Example prices for development and demonstration.{% endif %} <a href="{% url 'help' %}">Where do prices come from?</a></p>
       </footer>
     </div>
   </div>

@@ -49,20 +49,24 @@ def check_alerts(db, as_of=None, alert_ids=None):
         key = (alert.crop_id, location)
         if key not in cache:
             cache[key] = latest_prices(db, as_of=as_of, location=location, crop_ids=[alert.crop_id])
-        matches = [row for row in cache[key] if alert.is_met_by(row.price)]
+        def threshold_price(row):
+            if alert.condition == PriceAlert.BELOW and row.quote:
+                return row.quote.high
+            return row.price
+        matches = [row for row in cache[key] if alert.is_met_by(threshold_price(row))]
         if not matches:
             continue
 
         pick = max if alert.condition == PriceAlert.ABOVE else min
-        best = pick(matches, key=lambda r: r.price)
+        best = pick(matches, key=threshold_price)
         if alert.last_notified_on and best.date <= alert.last_notified_on:
             continue  # already told the user about this price
 
         crop = alert.crop
         word = "above" if alert.condition == PriceAlert.ABOVE else "below"
-        title = f"{crop.icon} {crop.name} is now {peso(best.price)}/{crop.unit}"
+        title = f"{crop.icon} {crop.name} is now {best.display_price}/{crop.unit}"
         message = (
-            f"{crop.name} is {peso(best.price)}/{crop.unit} at {best.market.name} "
+            f"{crop.name} is {best.display_price}/{crop.unit} at {best.market.name} "
             f"({best.market.location}). That is {word} your target of "
             f"{peso(alert.target_price)}/{crop.unit}."
         )

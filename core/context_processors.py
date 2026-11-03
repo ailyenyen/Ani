@@ -19,6 +19,7 @@ def ani(request):
         "current_user": user,
         "unread_count": unread,
         "show_sample_notice": settings.ANI_SAMPLE_DATA_NOTICE,
+        "live_reports": not settings.ANI_SAMPLE_DATA_NOTICE,
         "reference_source": settings.ANI_REFERENCE_SOURCE,
         "support_email": settings.ANI_SUPPORT_EMAIL,
         "web_push_enabled": web_push_configured(),
