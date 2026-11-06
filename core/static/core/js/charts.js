@@ -131,7 +131,7 @@
           label: "Price per kg",
           data: data.values,
           backgroundColor: data.colors || data.values.map(function () { return t.line; }),
-          borderColor: (data.colors || []).map(function (c) { return c === "#F4E7C1" ? "#E5D39C" : c; }),
+          borderColor: (data.colors || []).map(function (c) { return c === "#D3EBD3" ? "#9CC9A3" : c; }),
           borderWidth: 1,
           borderRadius: { topLeft: 8, topRight: 8 },
           borderSkipped: "bottom",

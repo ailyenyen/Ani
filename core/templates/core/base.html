@@ -109,7 +109,7 @@
     </ul>
   </nav>
 
-  <script src="{% static 'core/js/app.js' %}" defer></script>
+  <script src="{% static 'core/js/app.js' %}?v={{ asset_version }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,8 +1,21 @@
+from pathlib import Path
+
 from django.conf import settings
 from sqlalchemy import func, select
 
 from .models import Notification
 from .notifications import web_push_configured
+
+
+_STATIC_DIR = Path(__file__).resolve().parent / "static" / "core"
+
+
+def asset_version():
+    """Changes whenever a CSS/JS file changes, so browsers fetch the new file instead of a cached one."""
+    try:
+        return str(int(max(f.stat().st_mtime for f in _STATIC_DIR.glob("*/*.*") if f.suffix in {".css", ".js"})))
+    except ValueError:
+        return "1"
 
 
 def ani(request):
@@ -22,4 +35,5 @@ def ani(request):
         "reference_source": settings.ANI_REFERENCE_SOURCE,
         "support_email": settings.ANI_SUPPORT_EMAIL,
         "web_push_enabled": web_push_configured(),
+        "asset_version": asset_version(),
     }
