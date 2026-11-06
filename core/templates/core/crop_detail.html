@@ -11,16 +11,21 @@
         <h2 id="crop-name">{{ crop.name }}<span class="english">{{ crop.english_name }}</span></h2>
         {% if headline %}
           <div class="price-line">
-            <p class="price-big">{{ headline.price|peso }}<span class="unit">/{{ crop.unit }}</span></p>
+            <p class="price-big">{{ headline.display_price }}<span class="unit">/{{ crop.unit }}</span></p>
             <span class="change-block">{% include "core/partials/change.html" with row=headline %}{% if headline.direction == 'up' or headline.direction == 'down' %}<small>vs. last week</small>{% endif %}</span>
           </div>
           <p class="source-line">{% icon 'shield' 16 %}Source: {{ headline.source }} · {{ headline.date|updated_label }}</p>
+          {% if headline.evidence %}
+          <p><a href="{{ headline.evidence.source_url }}" target="_blank" rel="noopener">View publication</a> · {{ headline.evidence.report_start|date:"M j, Y" }}–{{ headline.evidence.report_end|date:"M j, Y" }} · {% if headline.quote %}Market quotation · {{ headline.market.location }}{% else %}Weekly retail average, NCR{% endif %}</p>
+          <p class="muted">{{ headline.evidence.raw_row }}{% if headline.evidence.note %}<br>{{ headline.evidence.note }}{% endif %}</p>
+          {% endif %}
         {% else %}
           <p class="muted" style="margin:6px 0 0">No recent price in {{ location }}.</p>
         {% endif %}
       </div>
     </div>
 
+    {% if headline.quote and headline.quote.low != headline.quote.high %}<p class="muted">Trend and summary figures use the lower end of the reported range.</p>{% endif %}
     {% if stats %}
     <div class="stats" aria-label="Price summary for all markets in {{ location }}, last {{ range_label|lower }}">
       <div class="stat">
@@ -101,7 +106,7 @@
         {% for r in rows %}
           <tr>
             <td><span class="market-cell"><span class="market-dot m{{ r.market|market_color }}" aria-hidden="true"></span><span>{{ r.market.name }}<small>{{ r.date|updated_label }}</small></span></span></td>
-            <td class="td-price">{{ r.price|floatformat:2 }}{% if forloop.first and rows|length > 1 %} <span class="tag tag-best">Highest</span>{% endif %}</td>
+            <td class="td-price">{{ r.display_price }}{% if forloop.first and rows|length > 1 %} <span class="tag tag-best">Highest</span>{% endif %}</td>
             <td>{% include "core/partials/change.html" with row=r %}</td>
           </tr>
         {% endfor %}

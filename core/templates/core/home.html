@@ -33,7 +33,7 @@
     {% endif %}
     <div class="stat-card">
       <span class="icon-badge">{% icon 'store' 22 %}</span>
-      <span class="stat-card-text"><span class="stat-card-label">Markets Monitored</span><span class="stat-card-value">{{ stats.market_count }}</span></span>
+      <span class="stat-card-text"><span class="stat-card-label">{% if live_reports %}Markets &amp; series{% else %}Markets Monitored{% endif %}</span><span class="stat-card-value">{{ stats.market_count }}</span></span>
     </div>
     <div class="stat-card">
       <span class="icon-badge cream">{% icon 'calendar' 22 %}</span>
@@ -50,12 +50,13 @@
         <div>
           <h2 class="featured-name" id="featured-title">{{ row.crop.name }}</h2>
           <div class="price-line">
-            <p class="price-big">{{ row.price|peso }}<span class="unit">/{{ row.crop.unit }}</span></p>
+            <p class="price-big">{{ row.display_price }}<span class="unit">/{{ row.crop.unit }}</span></p>
             <span class="change-block">{% include "core/partials/change.html" with row=row %}{% if row.direction == 'up' or row.direction == 'down' %}<small>vs. last week</small>{% endif %}</span>
           </div>
         </div>
       </div>
       <p class="source-line">{% icon 'shield' 16 %}Source: {{ row.source }} · {{ row.market.location }}</p>
+      {% if row.evidence %}<p><a href="{{ row.evidence.source_url }}" target="_blank" rel="noopener">Official report</a> · {% if row.quote %}Reported{% else %}Week ending{% endif %} {{ row.date|date:"M j, Y" }}</p>{% endif %}
       <a class="btn btn-soft btn-small" href="{% url 'crop_detail' row.crop.slug %}?location={{ row.market.location|urlencode }}">View Details</a>
     </div>
     {% if chart and chart.values|length > 1 %}

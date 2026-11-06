@@ -17,7 +17,7 @@
             <div><h2>{{ crop.name }}</h2><span class="muted">{{ crop.english_name }}</span></div>
           </div>
           {% if s %}
-            <p class="price-big" style="font-size:1.625rem">{{ s.headline.price|peso }}<span class="unit">/{{ crop.unit }}</span></p>
+            <p class="price-big" style="font-size:1.625rem">{{ s.headline.display_price }}<span class="unit">/{{ crop.unit }}</span></p>
             <p class="source-line">{% icon 'shield' 18 %} Source: {{ s.headline.source }} · {{ s.headline.market.location }}</p>
             <p class="cc-meta">{% include "core/partials/change.html" with row=s.headline %}<span class="muted">{{ s.headline.date|updated_label }}</span></p>
           {% else %}

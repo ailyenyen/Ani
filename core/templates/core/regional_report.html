@@ -1,0 +1,36 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Compare Markets{% endblock %}
+{% block header %}{% include "core/partials/page_title.html" with title="Compare Markets" lead="Compare the same crop across markets and regions." %}{% endblock %}
+{% block content %}
+<div class="cm-layout">
+<form class="cm-controls card" method="get" action="{% url 'compare' %}">
+  <div class="cm-primary"><label>Crop{{ form.crop }}</label><label>Price source{{ form.source }}</label><button class="btn btn-primary">Compare prices</button></div>
+  <details class="cm-options"{% if form.region.value or form.errors %} open{% endif %}><summary>Regions, date &amp; specifications{% if form.region.value %} · {{ form.region.value|length }} selected{% endif %}</summary>
+    <div class="cm-fields"><label>Product specification{{ form.product }}</label><label>As of{{ form.as_of }}</label><label>Reporting window{{ form.days }}</label></div>
+    <fieldset><legend>Regions <small>Leave unchecked to include all</small></legend><div class="report-regions">{{ form.region }}</div></fieldset>
+  </details>
+  {% if form.errors %}<p role="alert">{{ form.errors }}</p>{% endif %}
+</form>
+{% if report.groups %}{% with g=report.groups.0 %}
+<section class="cm-hero">
+ <div><p class="cm-kicker">LOWEST REPORTED PRICE</p><h2>{{ g.product }} <span>· {{ g.specification }}</span></h2>
+ <p class="cm-amount">{{ g.lowest|peso }}<small>/kg</small></p>
+ <p class="cm-winner">{{ g.winners.0.market|title }}{% if g.winners|length > 1 %} and {{ g.winners|length|add:"-1" }} more tied{% endif %}</p>
+ <p>{{ g.winners.0.region }} · {{ g.date|date:"M j, Y" }}</p></div>
+ <div class="cm-facts"><strong>{{ g.rows|length }}</strong> matching observations<strong>{{ g.regional|length }}</strong> reporting region{{ g.regional|length|pluralize }}</div>
+</section>{% endwith %}{% endif %}
+{% for g in report.groups %}
+<section class="card cm-ranking"><div class="cm-section"><div><p class="cm-kicker">{{ g.date|date:"F j, Y" }}</p><h2>{{ g.product|title }} by region</h2><p class="muted">{{ g.specification }} · Lowest reported retail price per kilogram</p></div></div>
+ <span class="sr-only">Lowest reported: {{ g.lowest|peso }}/kg</span>
+ <ol class="cm-list">{% for r in g.regional %}<li><div><strong>{{ r.name }}</strong><small>{% for m in r.markets %}{{ m.market|title }}{% if not forloop.last %} · {% endif %}{% endfor %}</small></div><b>{{ r.low|peso }}</b></li>{% endfor %}</ol>
+ <details class="cm-options"><summary>See {{ g.rows|length }} market observation{{ g.rows|length|pluralize }}</summary><div class="report-table"><table class="data-table"><thead><tr><th>Market</th><th>Region</th><th>₱/kg</th><th>Source</th></tr></thead><tbody>{% for r in g.rows %}<tr><td>{{ r.market|title }}</td><td>{{ r.region }}</td><td>{{ r.low|peso }}{% if r.high != r.low %}–{{ r.high|peso }}{% endif %}</td><td><a href="{{ r.source_url }}">{{ r.source }}</a></td></tr>{% endfor %}</tbody></table></div></details>
+</section>{% empty %}<section class="card empty-state"><h2>No comparable current prices</h2><p>Try another region, source, or reporting window.</p></section>{% endfor %}
+{% if benchmarks %}<section class="card"><p class="cm-kicker">WEEKLY REFERENCE</p><h2>NCR published averages</h2>{% for b in benchmarks %}<p><strong>{{ b.crop.name }} · {{ b.price|peso }}/kg</strong><br><a href="{{ b.evidence.source_url }}">{{ b.source }}</a> · Week ending {{ b.date|date:"M j" }}</p>{% endfor %}</section>{% endif %}
+<section class="card"><p class="cm-kicker">PUBLICATIONS</p><h2>Compare sources</h2><div class="cm-sources">{% for s in report.source_summary %}<div><strong>{{ s.name }}</strong><p>{{ s.low|peso }}–{{ s.high|peso }}/kg</p><small>{{ s.count }} observations · {{ s.regions }} region{{ s.regions|pluralize }}<br>{{ s.oldest|date:"M j" }}–{{ s.newest|date:"M j, Y" }}</small></div>{% empty %}<p>No market observations for this selection.</p>{% endfor %}</div>
+<p class="muted">Each ranking uses one specification, unit and reporting date. For a published range, the ranking uses its lower end. Source summaries can include several grades.</p>
+<button form="cm-export" class="btn btn-soft">Download filtered CSV</button><form id="cm-export" method="get" action="{% url 'compare' %}">{% for k,vals in request.GET.lists %}{% if k != 'format' %}{% for v in vals %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}{% endif %}{% endfor %}<input type="hidden" name="format" value="csv"></form>
+</section>
+<details class="card cm-options"><summary>Collection history and coverage</summary><div class="report-table"><table class="data-table"><thead><tr><th>Source</th><th>Region</th><th>Category</th><th>Result</th></tr></thead><tbody>{% for run in report.runs %}<tr><td>{{ run.source }}</td><td>{{ run.region }}</td><td>{{ run.category }}</td><td>{{ run.status }} · {{ run.count }}{% if run.error %}<br>{{ run.error }}{% endif %}</td></tr>{% endfor %}</tbody></table></div></details>
+</div>
+{% endblock %}

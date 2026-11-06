@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .regional_views import regional_report
 
 urlpatterns = [
     path("", views.landing, name="landing"),
@@ -9,6 +10,7 @@ urlpatterns = [
     path("prices/", views.market_prices, name="prices"),
     path("crops/<slug:slug>/", views.crop_detail, name="crop_detail"),
     path("compare/", views.compare, name="compare"),
+    path("reports/regions/", regional_report, name="regional_report"),
     path("alerts/", views.alerts, name="alerts"),
     path("alerts/new/", views.alert_new, name="alert_new"),
     path("alerts/<int:alert_id>/toggle/", views.alert_toggle, name="alert_toggle"),

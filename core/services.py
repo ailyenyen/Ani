@@ -13,9 +13,9 @@ from typing import List, Optional
 from django.conf import settings
 from django.utils import timezone
 from sqlalchemy import func, select
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, selectinload
 
-from .models import Crop, CropPrice, Market, SavedCrop, ScrapeRun
+from .models import CatalogQuote, Crop, CropPrice, Market, SavedCrop, ScrapeRun
 
 # "From last week" compares against the price about 7 days earlier.
 CHANGE_WINDOW_DAYS = 7
@@ -65,6 +65,14 @@ class PriceRow:
     date: object
     source: str
     previous_price: Optional[Decimal] = None
+    evidence: object = None
+    quote: object = None
+
+    @property
+    def display_price(self):
+        if self.quote and self.quote.low != self.quote.high:
+            return f"₱{self.quote.low:,.2f}–₱{self.quote.high:,.2f}"
+        return f"₱{self.price:,.2f}"
 
     @property
     def change_pct(self):
@@ -107,8 +115,11 @@ class CropSummary:
 
 # --- Lookups ----------------------------------------------------------------
 
-def list_locations(db):
-    return list(db.scalars(select(Market.location).distinct().order_by(Market.location)))
+def list_locations(db, crop_id=None):
+    query = select(Market.location)
+    if crop_id is not None:
+        query = query.join(CropPrice).where(CropPrice.crop_id == crop_id)
+    return list(db.scalars(query.distinct().order_by(Market.location)))
 
 
 def list_crops(db, category=None):
@@ -161,7 +172,8 @@ def latest_prices(db, as_of=None, location=None, crop_ids=None, category=None, s
         select(CropPrice)
         .join(CropPrice.market)
         .join(CropPrice.crop)
-        .options(contains_eager(CropPrice.market), contains_eager(CropPrice.crop))
+        .options(contains_eager(CropPrice.market), contains_eager(CropPrice.crop),
+                 selectinload(CropPrice.evidence), selectinload(CropPrice.regional_listing).joinedload(CatalogQuote.quote))
         .where(CropPrice.date <= as_of, CropPrice.date >= oldest)
         .order_by(CropPrice.date)
     )
@@ -172,7 +184,7 @@ def latest_prices(db, as_of=None, location=None, crop_ids=None, category=None, s
     if category:
         stmt = stmt.where(Crop.category == category)
     if source:
-        stmt = stmt.where(Market.source == source)
+        stmt = stmt.where(CropPrice.source == source)
 
     history = defaultdict(list)
     for record in db.scalars(stmt):
@@ -193,6 +205,8 @@ def latest_prices(db, as_of=None, location=None, crop_ids=None, category=None, s
                 price=money(latest.price),
                 date=latest.date,
                 source=latest.source,
+                evidence=latest.evidence,
+                quote=latest.regional_listing.quote if latest.regional_listing else None,
                 previous_price=money(previous.price) if previous else None,
             )
         )

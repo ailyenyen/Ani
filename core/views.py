@@ -199,7 +199,7 @@ def crop_detail(request, slug):
     crop = services.get_crop(db, slug)
     if crop is None:
         raise Http404("Crop not found")
-    locations = services.list_locations(db)
+    locations = services.list_locations(db, crop.id)
     location = _location_for(request, locations, require_specific=True)
     try:
         days = int(request.GET.get("range", 7))
@@ -238,6 +238,10 @@ def crop_detail(request, slug):
 
 
 def compare(request):
+    from .models import RegionalQuote
+    from .regional_views import regional_report
+    if request.db.scalar(select(RegionalQuote.id).limit(1)):
+        return regional_report(request)
     db, user = request.db, request.ani_user
     crops = services.list_crops(db)
     locations = services.list_locations(db)

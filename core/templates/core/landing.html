@@ -13,7 +13,7 @@
       <nav class="lp-nav" aria-label="Page sections">
         <a href="#features">Features</a>
         <a href="#how">How it works</a>
-        <a href="#prices">Today's prices</a>
+        <a href="#prices">Latest reports</a>
         <a href="#sources">Sources</a>
       </nav>
       <div class="lp-header-actions">
@@ -34,9 +34,9 @@
         <div class="lp-hero-copy">
           <p class="lp-kicker anim-rise" style="--d:0">{% icon 'sprout' 16 %} Crop prices for Filipino farmers</p>
           <h1 class="anim-rise" style="--d:1">Know the fair price <span class="lp-accent">before you sell.</span></h1>
-          <p class="lp-lead anim-rise" style="--d:2">Ani brings crop prices from DA Bantay Presyo, Kadiwa and local markets into one simple place. See today's price, find the market that pays the most, and get a message when your target price is reached.</p>
+          <p class="lp-lead anim-rise" style="--d:2">{% if live_reports %}Explore regional market prices, Infanta bulletins and weekly DA reports, including Kadiwa program rice. Check the report date and original publication for every price. Retail prices are a guide, not offers to buy your harvest.{% else %}Explore crop price monitoring with clearly marked sample prices.{% endif %}</p>
           <div class="lp-cta anim-rise" style="--d:3">
-            <a class="btn btn-primary btn-lg" href="{% url 'home' %}">Check today's prices {% icon 'arrow-right' 18 %}</a>
+            <a class="btn btn-primary btn-lg" href="{% url 'home' %}">Check latest reports {% icon 'arrow-right' 18 %}</a>
             {% if not current_user %}<a class="btn btn-secondary btn-lg" href="{% url 'signup' %}">Create free account</a>{% endif %}
           </div>
           <ul class="lp-trust anim-rise" style="--d:4">
@@ -52,7 +52,7 @@
           <div class="card lp-preview">
             <div class="lp-preview-head">
               <div>
-                <p class="eyebrow">Today in {{ location }}</p>
+                <p class="eyebrow">Latest reported prices · {{ location }}</p>
                 <h2>Latest crop prices</h2>
               </div>
               <span class="lp-live"><span class="lp-live-dot" aria-hidden="true"></span>{{ last_update|updated_label|default:"Updated daily" }}</span>
@@ -62,7 +62,7 @@
                 <li class="row-item">
                   <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
                   <span class="row-main"><strong>{{ s.crop.name }}</strong><span>{{ row.market.name }}</span></span>
-                  <span class="row-end"><span class="price-md">{{ row.price|peso }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
+                  <span class="row-end"><span class="price-md">{{ row.display_price }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
                 </li>
               {% endwith %}{% empty %}
                 <li class="row-item"><span class="row-main"><strong>Prices are on their way</strong><span>Check back soon.</span></span></li>
@@ -100,7 +100,7 @@
           <article class="card lp-feature reveal">
             <span class="icon-badge solid">{% icon 'bars' 22 %}</span>
             <h3>Latest crop prices</h3>
-            <p>See today's price per kilo for palay, kamatis, sili, mais and more, near where you sell.</p>
+            <p>View reported prices per kilo, with their source and reporting date. Coverage depends on the publication.</p>
           </article>
           <article class="card lp-feature reveal">
             <span class="icon-badge solid">{% icon 'compare' 22 %}</span>
@@ -151,7 +151,7 @@
       <div class="lp-wrap">
         <div class="lp-section-head lp-section-head-row reveal">
           <div>
-            <p class="eyebrow">Today's prices</p>
+            <p class="eyebrow">Latest reported prices</p>
             <h2 id="prices-title">Prices in {{ location }}</h2>
           </div>
           <a class="btn btn-soft" href="{% url 'prices' %}">See all prices {% icon 'arrow-right' 16 %}</a>
@@ -171,12 +171,12 @@
         <div class="reveal">
           <p class="eyebrow">Where prices come from</p>
           <h2 id="sources-title">Public sources, shown openly</h2>
-          <p class="lp-lead">Ani collects prices from public price lists and bulletins, checks them, and shows each one with its source and date. Ani does not buy, sell or predict prices.</p>
+          <p class="lp-lead">{% if live_reports %}Open a crop for its weekly DA report, or visit the <a href="{% url 'compare' %}">Compare Markets</a> for prices from individual markets published by Bantay Presyo and Infanta LGU.{% else %}This demonstration contains sample data.{% endif %}</p>
         </div>
         <ul class="lp-source-list">
           <li class="card reveal"><span class="market-dot m0" aria-hidden="true"></span><div><strong>DA Bantay Presyo</strong><span>Price monitoring by the Department of Agriculture</span></div></li>
-          <li class="card reveal"><span class="market-dot m1" aria-hidden="true"></span><div><strong>Kadiwa</strong><span>Kadiwa center price lists</span></div></li>
-          <li class="card reveal"><span class="market-dot m2" aria-hidden="true"></span><div><strong>Local market bulletins</strong><span>Prices posted by public and local markets</span></div></li>
+          <li class="card reveal"><span class="market-dot m1" aria-hidden="true"></span><div><strong>Kadiwa</strong><span>{% if live_reports %}Program rice entries in official DA reports{% else %}Sample Kadiwa prices{% endif %}</span></div></li>
+          <li class="card reveal"><span class="market-dot m2" aria-hidden="true"></span><div><strong>Local market bulletins</strong><span>{% if live_reports %}Infanta Commercial Center, Quezon{% else %}Sample local prices{% endif %}</span></div></li>
         </ul>
       </div>
     </section>
@@ -185,10 +185,10 @@
       <div class="lp-wrap lp-final-inner">
         <div>
           <h2 id="final-title">Better Prices. Stronger Farmers.</h2>
-          <p>Open Ani on any phone and check today's price in seconds.</p>
+          <p>Open Ani on any phone and check the latest available reports.</p>
         </div>
         <div class="lp-cta">
-          <a class="btn btn-sun btn-lg" href="{% url 'home' %}">Check today's prices</a>
+          <a class="btn btn-sun btn-lg" href="{% url 'home' %}">Check latest reports</a>
           {% if not current_user %}<a class="btn btn-ghost btn-lg" href="{% url 'signup' %}">Create free account</a>{% endif %}
         </div>
       </div>

@@ -38,7 +38,7 @@
               <h3>{{ a.crop.name }}</h3>
               <p class="alert-text">{{ item.text }}</p>
               {% if item.current %}
-                <p class="alert-now">{{ item.current.headline.market.name }} · {{ item.current.market_count }} market{{ item.current.market_count|pluralize }} · now {{ item.current.headline.price|peso }}/{{ a.crop.unit }}</p>
+                <p class="alert-now">{{ item.current.headline.market.name }} · {{ item.current.market_count }} market{{ item.current.market_count|pluralize }} · now {{ item.current.headline.display_price }}/{{ a.crop.unit }}</p>
               {% endif %}
             </div>
             <div class="alert-actions">

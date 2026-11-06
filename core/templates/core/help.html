@@ -47,12 +47,23 @@
 
 <section class="card" aria-labelledby="sources-title">
   <div class="help-card-head"><span class="icon-badge solid">{% icon 'shield' 22 %}</span><h2 id="sources-title">Where do the prices come from?</h2></div>
-  <p>Ani collects prices from public sources. Every price in Ani shows its source, so you know where it came from.</p>
+  {% if live_reports %}
+  <p>Ani downloads PDF reports linked from the <a href="https://www.da.gov.ph/price-monitoring/" target="_blank" rel="noopener">official DA Price Monitoring page</a>. Open a crop's details to view its exact report, reporting period, and original price row.</p>
+  <ul>
+    <li><strong>DA Bantay Presyo</strong>: weekly average consumer retail prices for NCR, not individual market quotations or farmer buying offers.</li>
+    <li><strong>Kadiwa</strong>: program rice prices published in the same DA report. These are a separate product with outlet and eligibility restrictions; this connection is not a complete Kadiwa outlet feed.</li>
+    <li><strong>DA Bantay Presyo regional portal</strong>: market-level crop and rice prices, with region/category dates. See the <a href="{% url 'compare' %}">Compare Markets</a> for available regions, source comparisons, and lowest-price rankings.</li>
+    <li><strong>Infanta LGU</strong>: crop retail prices and ranges at Infanta Commercial Center, Quezon. Unspecified grades remain separate from DA specifications.</li>
+  </ul>
+  <p>Report dates are the end of each reporting week. Missing weeks are not filled with invented daily prices. Prices older than 14 days are excluded from current listings. Collection runs when the importer is executed; browsing does not trigger a refresh.</p>
+  {% else %}
+  <p>This demo uses generated sample prices and offline sample pages. They are not verified market quotations.</p>
   <ul>
     <li><strong>DA Bantay Presyo</strong>: price monitoring by the Department of Agriculture</li>
     <li><strong>Kadiwa</strong>: Kadiwa center price lists</li>
     <li><strong>Local market bulletins</strong>: prices posted by public and local markets</li>
   </ul>
+  {% endif %}
   <p class="muted">Prices are a guide. The price you are offered can be different because of quality, size and quantity.</p>
   {% if runs %}
     <h3>Latest updates</h3>

@@ -20,8 +20,8 @@
             <span class="crop-cell"><span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span><a class="row-link" href="{% url 'crop_detail' s.crop.slug %}?location={{ row.market.location|urlencode }}">{{ s.crop.name }}</a></span>
           {% endif %}
         </td>
-        <td class="td-muted">{{ row.market.name }}{% if not location %} ({{ row.market.location }}){% endif %}</td>
-        <td class="td-price">{{ row.price|floatformat:2 }}</td>
+        <td class="td-muted">{{ row.market.name }}{% if not location %} ({{ row.market.location }}){% endif %}{% if row.evidence %}<br><a href="{{ row.evidence.source_url }}" target="_blank" rel="noopener">Report · {{ row.date|date:"M j, Y" }}</a>{% endif %}</td>
+        <td class="td-price">{{ row.display_price }}</td>
         <td>{% include "core/partials/change.html" with row=row %}</td>
         {% if variant == 'home' %}<td class="td-muted">{{ row.date|date:"M j, Y" }}</td>{% else %}<td class="td-chevron">{% icon 'chevron-right' 18 %}</td>{% endif %}
       </tr>
@@ -33,8 +33,8 @@
     <li>
       <a class="row-item" href="{% url 'crop_detail' s.crop.slug %}?location={{ row.market.location|urlencode }}">
         <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
-        <span class="row-main"><strong>{{ s.crop.name }}</strong><span>{{ row.market.name }}{% if not location %} · {{ row.market.location }}{% endif %}</span></span>
-        <span class="row-end"><span class="price-md">{{ row.price|peso }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
+        <span class="row-main"><strong>{{ s.crop.name }}</strong><span>{{ row.market.name }}{% if not location %} · {{ row.market.location }}{% endif %}{% if row.evidence %} · {% if row.quote %}Reported{% else %}Week ending{% endif %} {{ row.date|date:"M j, Y" }}{% endif %}</span></span>
+        <span class="row-end"><span class="price-md">{{ row.display_price }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
       </a>
     </li>
   {% endwith %}{% endfor %}
