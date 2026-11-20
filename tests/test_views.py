@@ -3,7 +3,7 @@ from unittest import mock
 from django.test import override_settings
 from sqlalchemy import select
 
-from core.models import PriceAlert, SavedCrop, User
+from core.models import Market, PriceAlert, SavedCrop, User
 
 from .base import TODAY, DatabaseTestCase
 
@@ -25,6 +25,17 @@ class ViewTests(DatabaseTestCase):
     def test_compare_shows_best_price(self, _today):
         response = self.client.get("/compare/?crop=palay&location=Batangas")
         self.assertContains(response, "<strong>Kadiwa — ₱24.00/kg</strong>", html=False)
+
+    def test_crop_trend_respects_selected_markets_and_period(self, _today):
+        markets = list(self.db.scalars(select(Market).where(Market.location == "Batangas").order_by(Market.name)))
+        selected = markets[:2]
+        response = self.client.get("/crops/palay/", {
+            "location": "Batangas", "range": "30", "trend_market": [str(m.id) for m in selected],
+        })
+        self.assertContains(response, 'data-chart="market-trend"')
+        chart = response.context["trend_chart"]
+        self.assertEqual([s["label"] for s in chart["series"]], [f"{m.name} · Batangas" for m in selected])
+        self.assertGreater(len(chart["labels"]), 7)
 
     def test_landing_page(self, _today):
         response = self.client.get("/")

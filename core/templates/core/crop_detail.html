@@ -70,28 +70,48 @@
     </div>
   </section>
 
-  {% if rows %}
+  {% if rows or trend_markets %}
   <section class="card" aria-labelledby="trend-title">
-    <div class="card-head">
-      <h2 id="trend-title">Price Trend</h2>
-      <nav class="segmented" aria-label="Time range">
-        {% for d, label in range_choices %}
-          <a href="?range={{ d }}&location={{ location|urlencode }}" aria-label="{{ label }}"{% if d == days %} aria-current="true"{% endif %}>{% if d == 90 %}3M{% else %}{{ d }}D{% endif %}</a>
-        {% endfor %}
-      </nav>
-    </div>
-    {% if chart and chart.values|length > 1 %}
-      <p class="chart-note">{{ chart.title }} · {{ headline.market.name }}, {{ location }}</p>
-      <div class="chart-box">
-        <canvas data-chart="line" data-source="trend-chart-data" role="img"
-          aria-label="{{ chart.title }}: from {{ chart.values|first|peso }} to {{ chart.values|last|peso }} per kilo."></canvas>
+    <h2 id="trend-title">Price Trend</h2>
+    <form method="get" class="tw-grid tw-gap-3 trend-controls">
+      <input type="hidden" name="location" value="{{ location }}">
+      <input type="hidden" name="trend_market" value="">
+      <label for="trend-range">Time period</label>
+      <select id="trend-range" name="range">
+        {% for d, label in range_choices %}<option value="{{ d }}"{% if d == days %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      {% if trend_markets %}
+      <details class="cm-options">
+        <summary>Choose markets ({{ selected_markets|length }} selected)</summary>
+        <fieldset class="tw-grid tw-gap-2 tw-max-h-60 tw-overflow-auto">
+          <legend>Markets reporting during this period</legend>
+          {% for id, market in trend_markets.items %}
+          <label><input type="checkbox" name="trend_market" value="{{ id }}"{% if id in selected_markets %} checked{% endif %}> {{ market.label }}</label>
+          {% endfor %}
+        </fieldset>
+      </details>
+      {% endif %}
+      <div><button class="btn btn-soft" type="submit">Update trend</button></div>
+    </form>
+    {% if trend_chart %}
+      <p class="chart-note">Published prices in ₱/{{ crop.unit }}. Ranges use the lower published price.</p>
+      <div class="chart-box tall">
+        <canvas data-chart="market-trend" data-source="trend-chart-data" role="img" aria-label="Historical {{ crop.name }} prices by market. See the price observations below for details."></canvas>
       </div>
-      {{ chart|json_script:"trend-chart-data" }}
+      {{ trend_chart|json_script:"trend-chart-data" }}
+      <details class="cm-options"><summary>View price observations</summary><div class="report-table">
+        <table class="data-table">
+          <thead><tr><th scope="col">Market</th>{% for day in trend_chart.labels %}<th scope="col">{{ day }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for series in trend_chart.series %}<tr><th scope="row">{{ series.label }}</th>{% for price in series.values %}<td>{% if price is not None %}{{ price|peso }}{% else %}—{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </div></details>
     {% else %}
-      <p class="muted">Not enough price history yet to show a trend.</p>
+      <p class="muted">Choose a market with published prices in this period, or try a longer period.</p>
     {% endif %}
   </section>
+  {% endif %}
 
+  {% if rows %}
   <section class="card flush span-2" aria-labelledby="markets-title">
     <div class="card-head" style="margin-bottom:0">
       <div>
@@ -126,4 +146,4 @@
   <a class="btn btn-primary btn-lg btn-block" href="{% url 'alert_new' %}?crop={{ crop.slug }}">{% icon 'bell' 20 %} Set Price Alert</a>
 </div>
 {% endblock %}
-{% block scripts %}{% if chart %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}
+{% block scripts %}{% if trend_chart %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}

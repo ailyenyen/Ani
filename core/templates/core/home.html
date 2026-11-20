@@ -57,7 +57,7 @@
       </div>
       <p class="source-line">{% icon 'shield' 16 %}Source: {{ row.source }} · {{ row.market.location }}</p>
       {% if row.evidence %}<p><a href="{{ row.evidence.source_url }}" target="_blank" rel="noopener">Official report</a> · {% if row.quote %}Reported{% else %}Week ending{% endif %} {{ row.date|date:"M j, Y" }}</p>{% endif %}
-      <a class="btn btn-soft btn-small" href="{% url 'crop_detail' row.crop.slug %}?location={{ row.market.location|urlencode }}">View Details</a>
+      <a class="btn btn-soft btn-small" href="{% url 'crop_family' featured_family.slug %}">View Details</a>
     </div>
     {% if chart and chart.values|length > 1 %}
     <div class="featured-chart">
@@ -86,7 +86,7 @@
       <a class="link-more" href="{% url 'prices' %}">View All {% icon 'arrow-right' 16 %}</a>
     </div>
     {% if latest %}
-      {% include "core/partials/price_table.html" with summaries=latest variant="home" %}
+      {% include "core/partials/crop_groups.html" with groups=latest %}
     {% else %}
       <div class="empty-state">
         <span class="empty-emoji" aria-hidden="true">🌾</span>

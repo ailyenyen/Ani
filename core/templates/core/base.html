@@ -25,8 +25,10 @@
       <nav>
         <ul class="side-nav">
           <li><a href="{% url 'home' %}" title="Home" {% nav_active 'home' %}>{% icon 'home' 20 %}<span class="nav-label">Home</span></a></li>
-          <li><a href="{% url 'prices' %}" title="Market Prices" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 20 %}<span class="nav-label">Market Prices</span></a></li>
+          <li><a href="{% url 'prices' %}" title="Market Prices" {% nav_active 'prices' 'crop_detail' 'crop_family' %}>{% icon 'store' 20 %}<span class="nav-label">Market Prices</span></a></li>
+          {% if live_reports %}<li><a href="{% url 'farmgate_prices' %}" title="Farmgate Prices" {% nav_active 'farmgate_prices' %}>{% icon 'wheat' 20 %}<span class="nav-label">Farmgate Prices</span></a></li>{% endif %}
           <li><a href="{% url 'compare' %}" title="Compare Markets" {% nav_active 'compare' %}>{% icon 'compare' 20 %}<span class="nav-label">Compare Markets</span></a></li>
+          <li><a href="{% url 'buyer_offers' %}" title="Buyer Offers" {% nav_active 'buyer_offers' %}>{% icon 'bars' 20 %}<span class="nav-label">Buyer Offers</span></a></li>
           <li><a href="{% url 'alerts' %}" title="Price Alerts" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 20 %}<span class="nav-label">Price Alerts</span></a></li>
           <li><a href="{% url 'my_crops' %}" title="My Crops" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' 20 %}<span class="nav-label">My Crops</span></a></li>
           <li><a href="{% url 'profile' %}" title="Profile" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' 20 %}<span class="nav-label">Profile</span></a></li>
@@ -104,8 +106,8 @@
   <nav class="bottom-nav" aria-label="Main menu (shortcuts)">
     <ul>
       <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 24 %}<span>Home</span></a></li>
-      <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' %}>{% icon 'store' 24 %}<span>Markets</span></a></li>
-      <li><a href="{% url 'compare' %}" {% nav_active 'compare' %}>{% icon 'compare' 24 %}<span>Compare</span></a></li>
+      <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' 'crop_family' 'farmgate_prices' %}>{% icon 'store' 24 %}<span>Markets</span></a></li>
+      <li><a href="{% url 'compare' %}" {% nav_active 'compare' 'buyer_offers' %}>{% icon 'compare' 24 %}<span>Compare</span></a></li>
       <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 24 %}<span>Alerts</span></a></li>
       <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' 'my_crops' 'my_crops_add' 'help' %}>{% icon 'user' 24 %}<span>Profile</span></a></li>
     </ul>

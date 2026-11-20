@@ -188,6 +188,38 @@
     });
   });
 
+  var filters = document.querySelector("[data-comparison-filters]");
+  if (filters) {
+    var regionOptions = filters.querySelectorAll('input[name="region"]');
+    var regionCount = filters.querySelector("[data-region-count]");
+    var clearRegions = filters.querySelector("[data-clear-regions]");
+    var windowSummary = filters.querySelector("[data-window-summary]");
+    var dateLabel = new Intl.DateTimeFormat("en-US", {month: "short", day: "numeric"});
+    var updateRegions = function () {
+      var selected = filters.querySelectorAll('input[name="region"]:checked').length;
+      regionCount.textContent = selected ? selected + " selected" : "All regions";
+      clearRegions.hidden = selected === 0;
+    };
+    var updateWindow = function () {
+      var windowOption = filters.querySelector('input[name="days"]:checked');
+      var endDate = new Date(filters.elements.as_of.value + "T00:00:00");
+      var suffix = Number.isNaN(endDate.getTime()) ? "" : " through " + dateLabel.format(endDate);
+      windowSummary.textContent = filters.elements.report_date.value ? "Exact date selected"
+        : (windowOption ? windowOption.closest("label").textContent.trim() + suffix : "Choose a window");
+    };
+    regionOptions.forEach(function (option) { option.addEventListener("change", updateRegions); });
+    clearRegions.addEventListener("click", function () {
+      regionOptions.forEach(function (option) { option.checked = false; });
+      updateRegions();
+      regionCount.closest("summary").focus();
+    });
+    filters.querySelectorAll('input[name="days"], input[name="as_of"], select[name="report_date"]').forEach(function (option) {
+      option.addEventListener("change", updateWindow);
+    });
+    updateRegions();
+    updateWindow();
+  }
+
   // Alert form: show the current price of the chosen crop under the price box.
   var hint = document.querySelector("[data-price-hint]");
   if (hint) {

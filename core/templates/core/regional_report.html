@@ -4,28 +4,102 @@
 {% block header %}{% include "core/partials/page_title.html" with title="Compare Markets" lead="Compare the same crop across markets and regions." %}{% endblock %}
 {% block content %}
 <div class="cm-layout">
-<form class="cm-controls card" method="get" action="{% url 'compare' %}">
-  <div class="cm-primary"><label>Crop{{ form.crop }}</label><label>Price source{{ form.source }}</label><button class="btn btn-primary">Compare prices</button></div>
-  <details class="cm-options"{% if form.region.value or form.errors %} open{% endif %}><summary>Regions, date &amp; specifications{% if form.region.value %} · {{ form.region.value|length }} selected{% endif %}</summary>
-    <div class="cm-fields"><label>Product specification{{ form.product }}</label><label>As of{{ form.as_of }}</label><label>Reporting window{{ form.days }}</label></div>
-    <fieldset><legend>Regions <small>Leave unchecked to include all</small></legend><div class="report-regions">{{ form.region }}</div></fieldset>
-  </details>
-  {% if form.errors %}<p role="alert">{{ form.errors }}</p>{% endif %}
+<div class="offer-entry filter-bar">
+  {% if live_reports %}<a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}">Compare Farmgate Prices</a>{% endif %}
+  <a class="btn btn-soft btn-small" href="{% url 'buyer_offers' %}">Compare Buyer Offers</a>
+</div>
+<form class="cm-controls card" method="get" action="{% url 'compare' %}" data-comparison-filters>
+  <div class="cm-fields cm-report-filters">
+    <label>Crop{{ form.crop }}</label><label>Price source{{ form.source }}</label>
+    <label>Crop specification{{ form.product }}</label><label>Reporting date{{ form.report_date }}</label>
+  </div>
+  <div class="cm-filter-panels">
+    <details class="cm-filter-panel"{% if form.region.errors %} open{% endif %}>
+      <summary>
+        {% icon 'pin' 20 %}<span><strong>Regions</strong><small data-region-count aria-live="polite">{% if form.region.value %}{{ form.region.value|length }} selected{% else %}All regions{% endif %}</small></span>
+      </summary>
+      <div class="cm-filter-body">
+        <div class="cm-region-toolbar">
+          <p id="cm-region-hint" class="muted">Choose regions to narrow your results.</p>
+          <button class="btn btn-soft btn-small" type="button" data-clear-regions hidden>Use all regions</button>
+        </div>
+        <fieldset class="cm-region-list" aria-describedby="cm-region-hint" tabindex="0">
+          <legend class="sr-only">Regions to include</legend>
+          {% for choice in form.region %}<label class="cm-choice">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+          {% empty %}<p class="muted">No regions available.</p>{% endfor %}
+        </fieldset>
+        {{ form.region.errors }}
+      </div>
+    </details>
+    <details class="cm-filter-panel"{% if form.as_of.errors or form.days.errors %} open{% endif %}>
+      <summary>
+        {% icon 'calendar' 20 %}<span><strong>Reporting window</strong><small data-window-summary>{% if form.report_date.value %}Exact date selected{% else %}{{ window_label }} through {{ as_of|date:"M j" }}{% endif %}</small></span>
+      </summary>
+      <div class="cm-filter-body">
+        <p class="muted">The reporting window applies when Reporting date is set to all dates.</p>
+        <fieldset class="cm-window-options">
+          <legend>Look back</legend>
+          <div>{% for choice in form.days %}<label class="cm-choice">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        {{ form.days.errors }}
+        <label class="cm-window-end" for="{{ form.as_of.id_for_label }}">Window end date{{ form.as_of }}</label>
+        {{ form.as_of.errors }}
+      </div>
+    </details>
+  </div>
+  <button class="btn btn-primary" type="submit">Compare prices</button>
+  {% if form.errors %}<div role="alert">{{ form.errors }}</div>{% endif %}
 </form>
-{% if report.groups %}{% with g=report.groups.0 %}
+{% if records %}
 <section class="cm-hero">
- <div><p class="cm-kicker">LOWEST REPORTED PRICE</p><h2>{{ g.product }} <span>· {{ g.specification }}</span></h2>
- <p class="cm-amount">{{ g.lowest|peso }}<small>/kg</small></p>
- <p class="cm-winner">{{ g.winners.0.market|title }}{% if g.winners|length > 1 %} and {{ g.winners|length|add:"-1" }} more tied{% endif %}</p>
- <p>{{ g.winners.0.region }} · {{ g.date|date:"M j, Y" }}</p></div>
- <div class="cm-facts"><strong>{{ g.rows|length }}</strong> matching observations<strong>{{ g.regional|length }}</strong> reporting region{{ g.regional|length|pluralize }}</div>
-</section>{% endwith %}{% endif %}
-{% for g in report.groups %}
-<section class="card cm-ranking"><div class="cm-section"><div><p class="cm-kicker">{{ g.date|date:"F j, Y" }}</p><h2>{{ g.product|title }} by region</h2><p class="muted">{{ g.specification }} · Lowest reported retail price per kilogram</p></div></div>
- <span class="sr-only">Lowest reported: {{ g.lowest|peso }}/kg</span>
- <ol class="cm-list">{% for r in g.regional %}<li><div><strong>{{ r.name }}</strong><small>{% for m in r.markets %}{{ m.market|title }}{% if not forloop.last %} · {% endif %}{% endfor %}</small></div><b>{{ r.low|peso }}</b></li>{% endfor %}</ol>
- <details class="cm-options"><summary>See {{ g.rows|length }} market observation{{ g.rows|length|pluralize }}</summary><div class="report-table"><table class="data-table"><thead><tr><th>Market</th><th>Region</th><th>₱/kg</th><th>Source</th></tr></thead><tbody>{% for r in g.rows %}<tr><td>{{ r.market|title }}</td><td>{{ r.region }}</td><td>{{ r.low|peso }}{% if r.high != r.low %}–{{ r.high|peso }}{% endif %}</td><td><a href="{{ r.source_url }}">{{ r.source }}</a></td></tr>{% endfor %}</tbody></table></div></details>
-</section>{% empty %}<section class="card empty-state"><h2>No comparable current prices</h2><p>Try another region, source, or reporting window.</p></section>{% endfor %}
+  <div><h2>{{ selected_crop }}</h2>{% if report_date %}<p>Reported on {{ report_date|date:"M j, Y" }}</p>{% else %}<p>{{ window_label }} through {{ as_of|date:"M j, Y" }}</p><p>Newest market report: {{ records.0.date|date:"M j, Y" }}</p>{% endif %}</div>
+  <div class="cm-facts"><strong>{{ records|length }}</strong> price observation{{ records|length|pluralize }}<strong>{{ market_count }}</strong> market{{ market_count|pluralize }}</div>
+</section>
+{% endif %}
+{% if not ranked_groups and not form.errors %}
+<section class="card" aria-label="Comparison availability">
+  {% if records %}<p>No two markets reported the same product and specification on the same date within these filters. Available prices are shown below.</p>
+  {% elif report_date %}<h2>No matching prices on {{ report_date|date:"M j, Y" }}</h2><p>Try a different reporting date, specification, source, or region.</p>
+  {% else %}<h2>No published market prices in this window</h2><p>Try a wider reporting window or change the source, region, or specification filters.</p>{% endif %}
+  {% if wider_window_query %}<a class="btn btn-soft btn-small" href="?{{ wider_window_query }}">Widen reporting window</a>{% endif %}
+</section>
+{% endif %}
+{% if comparison_charts %}
+<section class="card tw-grid tw-gap-3" aria-labelledby="regional-chart-title">
+  <h2 id="regional-chart-title">Prices by Market</h2>
+  {% if comparison_charts|length > 1 %}<label for="comparison-group">Chart to display</label>
+  <select id="comparison-group">
+    {% for group in comparison_charts %}<option value="{{ forloop.counter0 }}">{{ group.title }}</option>{% endfor %}
+  </select>{% else %}<p class="chart-note">{{ comparison_charts.0.title }}</p>{% endif %}
+  <p class="chart-note">Bars use the lower reported price. Select a bar to see its source and full range.</p>
+  <div class="tw-max-h-96 tw-overflow-auto" tabindex="0" aria-label="Scrollable market chart">
+    <div class="tw-relative"><canvas data-chart="regional"{% if comparison_charts|length > 1 %} data-selector="comparison-group"{% endif %} data-source="regional-chart-data" role="img" aria-label="Retail prices by market. Full prices are listed in the market observations below."></canvas></div>
+  </div>
+  {{ comparison_charts|json_script:"regional-chart-data" }}
+</section>
+{% endif %}
+{% if records %}
+<section class="card" aria-labelledby="market-observations-title">
+  <h2 id="market-observations-title">All matching market prices</h2>
+  <p class="muted">Latest available observation per market, product, and source in this window. Check the reporting date and specification before comparing.</p>
+  <div class="report-table market-observations" tabindex="0" aria-label="Scrollable list of matching prices">
+    <table class="data-table">
+      <thead><tr><th scope="col">Market</th><th scope="col">Product and specification</th><th scope="col">Retail price</th><th scope="col">Source</th><th scope="col">Reported</th></tr></thead>
+      <tbody>{% for row in records %}<tr>
+        <th scope="row">{{ row.market|title }}<small>{{ row.region }}</small></th>
+        <td>{{ row.product }}<small>{{ row.specification }}</small></td>
+        <td class="td-price">{{ row.low|peso }}{% if row.high != row.low %}–{{ row.high|peso }}{% endif %}/{{ row.unit }}</td>
+        <td><a href="{{ row.source_url }}">{{ row.source }}</a></td><td>{{ row.date|date:"M j, Y" }}</td>
+      </tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% for g in ranked_groups %}
+<details class="card cm-options" {% if forloop.first %}open{% endif %}>
+  <summary>Lowest prices by region · {{ g.product }} · {{ g.specification }} · {{ g.date|date:"M j, Y" }}</summary>
+  <ol class="cm-list">{% for r in g.regional %}<li><div><strong>{{ r.name }}</strong><small>{% for m in r.markets %}{{ m.market|title }}{% if not forloop.last %} · {% endif %}{% endfor %}</small></div><b>{{ r.low|peso }}/{{ g.unit }}</b></li>{% endfor %}</ol>
+</details>{% endfor %}
 {% if benchmarks %}<section class="card"><p class="cm-kicker">WEEKLY REFERENCE</p><h2>NCR published averages</h2>{% for b in benchmarks %}<p><strong>{{ b.crop.name }} · {{ b.price|peso }}/kg</strong><br><a href="{{ b.evidence.source_url }}">{{ b.source }}</a> · Week ending {{ b.date|date:"M j" }}</p>{% endfor %}</section>{% endif %}
 <section class="card"><p class="cm-kicker">PUBLICATIONS</p><h2>Compare sources</h2><div class="cm-sources">{% for s in report.source_summary %}<div><strong>{{ s.name }}</strong><p>{{ s.low|peso }}–{{ s.high|peso }}/kg</p><small>{{ s.count }} observations · {{ s.regions }} region{{ s.regions|pluralize }}<br>{{ s.oldest|date:"M j" }}–{{ s.newest|date:"M j, Y" }}</small></div>{% empty %}<p>No market observations for this selection.</p>{% endfor %}</div>
 <p class="muted">Each ranking uses one specification, unit and reporting date. For a published range, the ranking uses its lower end. Source summaries can include several grades.</p>
@@ -34,3 +108,4 @@
 <details class="card cm-options"><summary>Collection history and coverage</summary><div class="report-table"><table class="data-table"><thead><tr><th>Source</th><th>Region</th><th>Category</th><th>Result</th></tr></thead><tbody>{% for run in report.runs %}<tr><td>{{ run.source }}</td><td>{{ run.region }}</td><td>{{ run.category }}</td><td>{{ run.status }} · {{ run.count }}{% if run.error %}<br>{{ run.error }}{% endif %}</td></tr>{% endfor %}</tbody></table></div></details>
 </div>
 {% endblock %}
+{% block scripts %}{% if comparison_charts %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}

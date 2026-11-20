@@ -1,0 +1,2 @@
+{% if price.evidence %}<a href="{{ price.evidence.source_url }}" target="_blank" rel="noopener">{{ price.source }}</a>{% else %}{{ price.source }}{% endif %}
+<time datetime="{{ price.date|date:'Y-m-d' }}">{% if price.evidence and price.evidence.report_start != price.evidence.report_end %}{{ price.evidence.report_start|date:"M j" }}–{{ price.evidence.report_end|date:"M j, Y" }}{% else %}{{ price.date|date:"M j, Y" }}{% endif %}</time>

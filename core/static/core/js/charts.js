@@ -173,6 +173,94 @@
     return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
   }
 
+  function marketTrend(canvas, data, t) {
+    var dayMilliseconds = 86400000;
+    var days = data.labels.map(function (label) { return Date.parse(label) / dayMilliseconds; });
+    function formatDay(day) {
+      return new Date(day * dayMilliseconds).toISOString().slice(0, 10);
+    }
+    return new Chart(canvas, {
+      type: "line",
+      data: {
+        datasets: data.series.map(function (series, index) {
+          var color = "hsl(" + (index * 137.5 % 360) + ", 65%, 48%)";
+          return {
+            label: series.label,
+            data: series.values.flatMap(function (price, i) {
+              return price === null ? [] : [{ x: days[i], y: price }];
+            }),
+            borderColor: color,
+            backgroundColor: color,
+            pointRadius: 3,
+            pointHitRadius: 8
+          };
+        })
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: animation(),
+        interaction: { mode: "nearest", intersect: true },
+        plugins: {
+          legend: { position: "bottom", labels: { color: t.text, usePointStyle: true } },
+          tooltip: tooltip(t, {
+            title: function (items) { return formatDay(items[0].parsed.x); },
+            label: function (ctx) { return ctx.dataset.label + ": " + peso(ctx.parsed.y) + "/" + data.unit; }
+          })
+        },
+        scales: {
+          x: { type: "linear", grid: { display: false }, ticks: {
+            color: t.tick, maxTicksLimit: 5, maxRotation: 0, precision: 0, callback: formatDay
+          } },
+          y: { grid: { color: t.grid }, ticks: { color: t.tick } }
+        }
+      }
+    });
+  }
+
+  function regionalChart(canvas, group, t) {
+    canvas.parentElement.style.height = Math.max(180, 45 + group.markets.length * 32) + "px";
+    return new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: group.markets.map(function (market) { return market.name; }),
+        datasets: [{
+          label: "Lower reported price",
+          data: group.markets.map(function (market) { return market.low; }),
+          backgroundColor: group.markets.map(function (market) {
+            return market.low === group.markets[0].low ? t.line : "#619470";
+          }),
+          maxBarThickness: 20
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: animation(),
+        plugins: {
+          legend: { display: false },
+          tooltip: tooltip(t, {
+            title: function (items) { return group.markets[items[0].dataIndex].name; },
+            label: function (ctx) {
+              var market = group.markets[ctx.dataIndex];
+              var price = peso(market.low);
+              if (market.high !== market.low) price += "–" + peso(market.high);
+              return [price + "/" + group.unit, market.region, market.source];
+            }
+          })
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: t.grid }, ticks: { color: t.tick, callback: function (value) { return "₱" + value; } } },
+          y: { grid: { display: false }, ticks: { color: t.tick, autoSkip: false, callback: function (value) {
+            var label = this.getLabelForValue(value);
+            return label.length > 19 ? label.slice(0, 17) + "…" : label;
+          } } }
+        }
+      }
+    });
+  }
+
   var charts = [];
 
   function drawAll() {
@@ -181,13 +269,28 @@
     var t = theme();
     document.querySelectorAll("canvas[data-chart]").forEach(function (canvas) {
       var data = readData(canvas);
-      if (!data || !data.values || !data.values.length) return;
-      var chart = canvas.getAttribute("data-chart") === "columns" ? columnChart(canvas, data, t) : lineChart(canvas, data, t);
+      if (!data) return;
+      var type = canvas.getAttribute("data-chart");
+      var chart;
+      if (type === "market-trend") {
+        chart = marketTrend(canvas, data, t);
+      } else if (type === "regional") {
+        var selector = document.getElementById(canvas.getAttribute("data-selector"));
+        var group = data[selector ? Number(selector.value) : 0];
+        if (!group) return;
+        chart = regionalChart(canvas, group, t);
+      } else {
+        if (!data.values || !data.values.length) return;
+        chart = type === "columns" ? columnChart(canvas, data, t) : lineChart(canvas, data, t);
+      }
       charts.push(chart);
     });
   }
 
   drawAll();
+  document.querySelectorAll("canvas[data-selector]").forEach(function (canvas) {
+    document.getElementById(canvas.getAttribute("data-selector")).addEventListener("change", drawAll);
+  });
   // Redraw in the new colours when light/dark mode changes.
   document.addEventListener("ani:themechange", function () {
     var saved = reduceMotion;

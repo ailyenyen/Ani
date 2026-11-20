@@ -1,0 +1,276 @@
+{
+  "table": "0032M4AFN07.px",
+  "retrieved_on": "2026-11-19",
+  "observations": [
+    {
+      "variety": "Lakatan",
+      "month": "2025-01-01",
+      "price": "38.44"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-02-01",
+      "price": "41.68"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-03-01",
+      "price": "41.07"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-04-01",
+      "price": "40.25"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-05-01",
+      "price": "45.47"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-06-01",
+      "price": "39.84"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-07-01",
+      "price": "36.42"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-08-01",
+      "price": "55.97"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-09-01",
+      "price": "36.08"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-10-01",
+      "price": "44.85"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-11-01",
+      "price": "41.92"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2025-12-01",
+      "price": "43.07"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2026-01-01",
+      "price": "39.03"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2026-02-01",
+      "price": "41.83"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2026-03-01",
+      "price": "40.45"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2026-04-01",
+      "price": "48.81"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2026-05-01",
+      "price": "46.70"
+    },
+    {
+      "variety": "Lakatan",
+      "month": "2026-06-01",
+      "price": "46.54"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-01-01",
+      "price": "26.76"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-02-01",
+      "price": "31.87"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-03-01",
+      "price": "30.96"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-04-01",
+      "price": "27.62"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-05-01",
+      "price": "26.61"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-06-01",
+      "price": "31.04"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-07-01",
+      "price": "29.39"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-08-01",
+      "price": "29.20"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-09-01",
+      "price": "32.73"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-10-01",
+      "price": "32.04"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-11-01",
+      "price": "21.49"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2025-12-01",
+      "price": "21.10"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2026-01-01",
+      "price": "24.24"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2026-02-01",
+      "price": "25.69"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2026-03-01",
+      "price": "24.37"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2026-04-01",
+      "price": "25.71"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2026-05-01",
+      "price": "26.45"
+    },
+    {
+      "variety": "Latundan",
+      "month": "2026-06-01",
+      "price": "25.10"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-01-01",
+      "price": "21.56"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-02-01",
+      "price": "37.60"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-03-01",
+      "price": "15.16"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-04-01",
+      "price": "14.19"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-05-01",
+      "price": "18.87"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-06-01",
+      "price": "19.76"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-07-01",
+      "price": "16.67"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-08-01",
+      "price": "24.58"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-09-01",
+      "price": "20.11"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-10-01",
+      "price": "19.90"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-11-01",
+      "price": "22.58"
+    },
+    {
+      "variety": "Saba",
+      "month": "2025-12-01",
+      "price": "21.49"
+    },
+    {
+      "variety": "Saba",
+      "month": "2026-01-01",
+      "price": "16.22"
+    },
+    {
+      "variety": "Saba",
+      "month": "2026-02-01",
+      "price": "17.10"
+    },
+    {
+      "variety": "Saba",
+      "month": "2026-03-01",
+      "price": "17.02"
+    },
+    {
+      "variety": "Saba",
+      "month": "2026-04-01",
+      "price": "16.44"
+    },
+    {
+      "variety": "Saba",
+      "month": "2026-05-01",
+      "price": "18.53"
+    },
+    {
+      "variety": "Saba",
+      "month": "2026-06-01",
+      "price": "17.98"
+    }
+  ]
+}

@@ -3,13 +3,16 @@
 {% block title %}Market Prices{% endblock %}
 {% block header %}{% url 'home' as home_url %}{% include "core/partials/page_title.html" with title="Market Prices" lead="Find the latest prices for crops across different markets." back=home_url back_label="Back to Home" %}{% endblock %}
 {% block content %}
+{% if live_reports %}<div class="offer-entry"><a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}">Browse Farmgate Prices</a></div>{% endif %}
 <section class="card flush" aria-label="Crop prices">
   <form class="card-head" method="get" action="{% url 'prices' %}" style="display:block">
     <div class="filter-bar">
+      <label class="sr-only" for="f-search">Search crops or varieties</label>
+      <input id="f-search" type="search" name="q" value="{{ search }}" placeholder="Try banana, saging, or lakatan">
       <label class="sr-only" for="f-crop">What crop?</label>
       <select id="f-crop" name="crop" data-autosubmit>
         <option value="">All Crops</option>
-        {% for c in crops %}<option value="{{ c.slug }}"{% if selected_crop and c.id == selected_crop.id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        {% for c in crops %}<option value="{{ c.slug }}"{% if selected_crop == c.slug %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
       <label class="sr-only" for="f-location">Where?</label>
       {% include "core/partials/location_select.html" with select_id="f-location" allow_all=True %}
@@ -19,7 +22,7 @@
           {% for key, label, _days in when_choices %}<option value="{{ key }}"{% if key == when %} selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </span>
-      <button class="btn btn-primary js-hide" type="submit">Show Prices</button>
+      <button class="btn btn-primary" type="submit">Find Crops</button>
     </div>
     <details class="more-filters"{% if more_filters_open %} open{% endif %}>
       <summary>{% icon 'sliders' 18 %} More Filters</summary>
@@ -38,24 +41,24 @@
         <select id="f-sort" name="sort" data-autosubmit>
           <option value=""{% if not sort %} selected{% endif %}>Common crops first</option>
           <option value="name"{% if sort == 'name' %} selected{% endif %}>Name (A to Z)</option>
-          <option value="price_high"{% if sort == 'price_high' %} selected{% endif %}>Highest price first</option>
-          <option value="price_low"{% if sort == 'price_low' %} selected{% endif %}>Lowest price first</option>
+          <option value="price_high"{% if sort == 'price_high' %} selected{% endif %}>Highest preview price first</option>
+          <option value="price_low"{% if sort == 'price_low' %} selected{% endif %}>Lowest preview price first</option>
           <option value="change"{% if sort == 'change' %} selected{% endif %}>Biggest change</option>
         </select>
       </div>
     </details>
     <p class="result-line" aria-live="polite">
-      {{ summaries|length }} crop{{ summaries|length|pluralize }}{% if location %} in {{ location }}{% else %} in all locations{% endif %}{% if when != 'today' %}, prices as of {% for key, label, _d in when_choices %}{% if key == when %}{{ label|lower }}{% endif %}{% endfor %}{% endif %}. Tap a crop to see every market.
+      {{ groups|length }} crop{{ groups|length|pluralize }}{% if location %} in {{ location }}{% endif %}. Select a crop to see its varieties and published prices.
     </p>
   </form>
 
-  {% if summaries %}
-    {% include "core/partials/price_table.html" with summaries=summaries variant="prices" %}
+  {% if groups %}
+    {% include "core/partials/crop_groups.html" with groups=groups %}
   {% else %}
     <div class="empty-state">
       <span class="empty-emoji" aria-hidden="true">🔍</span>
-      <h2>No prices found</h2>
-      <p>Try choosing <strong>All Locations</strong> or another crop.</p>
+      <h2>No matching crops</h2>
+      <p>Try a different crop name or clear the filters.</p>
       <a class="btn btn-secondary" href="{% url 'prices' %}?location=all">Show all prices</a>
     </div>
   {% endif %}

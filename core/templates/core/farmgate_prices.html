@@ -1,0 +1,50 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Farmgate Prices{% endblock %}
+{% block header %}
+  {% url 'prices' as prices_url %}
+  {% include "core/partials/page_title.html" with title="Farmgate Prices" lead="Browse the Philippine Statistics Authority’s monthly averages of prices received by producers." back=prices_url back_label="Back to Market Prices" %}
+{% endblock %}
+{% block content %}
+{% if has_catalog %}
+<section class="card cm-controls" aria-label="Farmgate filters">
+  <form method="get" action="{% url 'farmgate_prices' %}">
+    <div class="cm-fields cm-report-filters">
+      {% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+    </div>
+    <div class="filter-bar">
+      <button class="btn btn-primary" type="submit">Show prices</button>
+      <a href="{% url 'farmgate_prices' %}" class="btn btn-soft">Reset filters</a>
+    </div>
+  </form>
+</section>
+<section class="card farmgate-results" aria-labelledby="farmgate-reports-title">
+  <h2 id="farmgate-reports-title">Published Farmgate Prices</h2>
+  <p class="muted">For a like-for-like comparison, select one product and month and compare locations at the same geographic level.</p>
+  {% if page.object_list %}
+  <p class="result-line">{{ page.paginator.count }} report{{ page.paginator.count|pluralize }}{% if not form.month.value %} · Latest available per product and location{% endif %}</p>
+  <div class="report-table" tabindex="0" aria-label="Scrollable farmgate price table">
+    <table class="data-table farmgate-table">
+      <thead><tr><th scope="col">Crop and product</th><th scope="col">Location</th><th scope="col">Farmgate price</th><th scope="col">Reporting month</th><th scope="col">Source</th></tr></thead>
+      <tbody>{% for row in page.object_list %}<tr>
+        <th scope="row">{{ row.family.name }}<small>{{ row.product }}</small></th>
+        <td>{{ row.location }}<small>{{ row.level }}</small></td>
+        <td class="td-price">{{ row.price|peso }}{% if row.unit %}/{{ row.unit }}{% else %}<small>See PSA unit</small>{% endif %}</td>
+        <td><time datetime="{{ row.month|date:'Y-m' }}">{{ row.month|date:"M Y" }}</time></td>
+        <td><a href="{{ row.source_url }}" target="_blank" rel="noopener">PSA OpenSTAT</a></td>
+      </tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% if page.has_other_pages %}
+  <nav class="filter-bar crop-report-pages" aria-label="Farmgate report pages">
+    {% if page.has_previous %}<a class="btn btn-soft btn-small" href="?{{ filter_query }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-soft btn-small" href="?{{ filter_query }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}<p class="muted">{% if form.errors %}Check the highlighted filters and try again.{% else %}No published values match. Try another month, location, or product.{% endif %}</p>{% endif %}
+</section>
+{% else %}
+<section class="card empty-state"><h2>No published farmgate data loaded</h2><p>Farmgate prices are available in live-data mode after a PSA import.</p></section>
+{% endif %}
+{% endblock %}

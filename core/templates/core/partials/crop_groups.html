@@ -1,0 +1,17 @@
+{% load ani_tags %}
+<ul class="row-list crop-group-list">
+  {% for group in groups %}{% with row=group.summary.headline %}
+  <li>
+    <a class="row-item" href="{% url 'crop_family' group.family.slug %}{% if link_query %}?{{ link_query }}{% endif %}">
+      <span class="crop-icon" aria-hidden="true">{{ group.listing.crop.icon }}</span>
+      <span class="row-main">
+        <strong>{{ group.family.name }}</strong>
+        {% if group.varieties %}<span>{{ group.varieties|slice:":4"|join:", " }}{% if group.varieties|length > 4 %} · +{{ group.varieties|length|add:"-4" }} more{% endif %}</span>{% endif %}
+        {% if row %}<span>{{ group.listing.variety }} · {{ row.market.name }} · {{ row.date|date:"M j, Y" }}</span>{% endif %}
+      </span>
+      {% if row %}<span class="row-end"><span class="price-md">{{ row.display_price }}<span class="unit">/{{ row.crop.unit }}</span></span></span>{% endif %}
+      {% icon 'chevron-right' 18 %}
+    </a>
+  </li>
+  {% endwith %}{% endfor %}
+</ul>

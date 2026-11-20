@@ -40,32 +40,36 @@
     var button = document.getElementById("enable-push");
     var status = document.getElementById("push-status");
     if (!button) return;
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (!window.isSecureContext || !("Notification" in window) || !("serviceWorker" in navigator) || !window.firebase || !firebase.messaging) {
       status.textContent = "This browser cannot show notifications. You will still see alerts inside Ani.";
       button.disabled = true;
       return;
     }
-    button.addEventListener("click", function () {
+    button.addEventListener("click", async function () {
+      button.disabled = true;
       status.textContent = "Please wait...";
-      var config = JSON.parse(document.getElementById("firebase-config").textContent);
-      firebase.initializeApp(config);
-      navigator.serviceWorker.register("{% url 'firebase_sw' %}").then(function (registration) {
-        return firebase.messaging().getToken({ vapidKey: "{{ vapid_key|escapejs }}", serviceWorkerRegistration: registration });
-      }).then(function (token) {
+      try {
+        if (await Notification.requestPermission() !== "granted") throw new Error("permission denied");
+        var config = JSON.parse(document.getElementById("firebase-config").textContent);
+        if (!firebase.apps.length) firebase.initializeApp(config);
+        await navigator.serviceWorker.register("{% url 'firebase_sw' %}");
+        var registration = await navigator.serviceWorker.ready;
+        var token = await firebase.messaging().getToken({ vapidKey: "{{ vapid_key|escapejs }}", serviceWorkerRegistration: registration });
         if (!token) throw new Error("no token");
         var csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
-        return fetch("{% url 'register_device' %}", {
+        var response = await fetch("{% url 'register_device' %}", {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
           body: JSON.stringify({ token: token })
         });
-      }).then(function (response) {
-        status.textContent = response.ok
-          ? "Done! Notifications are on for this device."
-          : "Something went wrong. Please try again.";
-      }).catch(function () {
+        if (!response.ok || !(await response.json()).ok) throw new Error("device registration failed");
+        document.querySelector("[name=push_enabled]").checked = true;
+        status.textContent = "Notifications are on for this device.";
+      } catch (error) {
         status.textContent = "Notifications were not turned on. If you blocked them, allow notifications for this site in your browser settings.";
-      });
+      } finally {
+        button.disabled = false;
+      }
     });
   });
 </script>

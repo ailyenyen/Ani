@@ -87,3 +87,25 @@ class PriceAlertForm(forms.Form):
     def __init__(self, *args, crops=(), **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["crop"].choices = [(c.slug, c.name) for c in crops]
+
+
+class HarvestQuantityForm(forms.Form):
+    quantity = forms.DecimalField(
+        label="Quantity to sell (kg)", min_value=Decimal("0.001"), max_digits=10, decimal_places=3,
+        widget=forms.NumberInput(attrs={"inputmode": "decimal", "placeholder": "e.g. 100"}),
+    )
+
+
+class BuyerOfferForm(forms.Form):
+    price = forms.DecimalField(
+        label="Price offered (₱/kg)", min_value=Decimal("0.01"), max_digits=10, decimal_places=2,
+        widget=forms.NumberInput(attrs={"inputmode": "decimal", "placeholder": "e.g. 35.00"}),
+    )
+    transport = forms.DecimalField(
+        label="Transport cost (₱)", required=False, min_value=Decimal("0"), max_digits=12, decimal_places=2,
+        widget=forms.NumberInput(attrs={"inputmode": "decimal", "placeholder": "0.00"}),
+    )
+    handling = forms.DecimalField(
+        label="Handling and other selling costs (₱)", required=False, min_value=Decimal("0"), max_digits=12, decimal_places=2,
+        widget=forms.NumberInput(attrs={"inputmode": "decimal", "placeholder": "0.00"}),
+    )

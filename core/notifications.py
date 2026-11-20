@@ -23,7 +23,10 @@ def fcm_configured():
 
 def web_push_configured():
     config = settings.FIREBASE_WEB_CONFIG
-    return bool(config.get("apiKey") and config.get("projectId") and settings.FIREBASE_VAPID_KEY)
+    return fcm_configured() and bool(
+        settings.FIREBASE_VAPID_KEY
+        and all(config.get(key) for key in ("apiKey", "projectId", "messagingSenderId", "appId"))
+    )
 
 
 def _session():
@@ -54,9 +57,7 @@ def send_push(db, user, title, body, link=""):
         message = {
             "message": {
                 "token": device.token,
-                "notification": {"title": title, "body": body},
-                "webpush": {"fcm_options": {"link": link}} if link.startswith("https://") else {},
-                "data": {"link": link},
+                "data": {"title": title, "body": body, "link": link},
             }
         }
         try:

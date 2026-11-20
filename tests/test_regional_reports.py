@@ -110,7 +110,8 @@ class RegionalReportTests(DatabaseTestCase):
         self.add("B","5",region="Region B")
         params={"crop":"Tomato / Kamatis","as_of":str(DAY),"days":"7","region":["Region A"]}
         response=self.client.get("/reports/regions/",params)
-        self.assertContains(response,"Lowest reported: ₱20.00/kg")
+        self.assertContains(response,"₱20.00/kg")
+        self.assertContains(response,"No two markets reported the same product")
         response=self.client.get("/reports/regions/",{**params,"format":"csv"})
         self.assertIn("Region A",response.content.decode())
         self.assertNotIn("Region B",response.content.decode())
@@ -118,4 +119,65 @@ class RegionalReportTests(DatabaseTestCase):
         self.assertEqual(self.client.get("/reports/regions/",{**params,"days":"99"}).status_code,400)
 
     def test_empty_database_has_useful_empty_state(self):
-        self.assertContains(self.client.get("/reports/regions/"),"No comparable current prices")
+        self.assertContains(self.client.get("/reports/regions/"),"No published market prices in this window")
+
+    @patch("core.regional_views.today", return_value=DAY)
+    def test_live_chart_keeps_market_ranges_and_separates_specifications(self, _today):
+        self.add("North", "25", high="35")
+        self.add("South", "30")
+        self.add("West", "15", spec="Grade B")
+        response = self.client.get("/compare/")
+        self.assertContains(response, 'data-chart="regional"')
+        chart, = response.context["comparison_charts"]
+        self.assertEqual([(m["name"], m["low"], m["high"]) for m in chart["markets"]], [
+            ("North", 25, 35), ("South", 30, 30),
+        ])
+
+    @patch("core.regional_views.today", return_value=DAY)
+    def test_overview_includes_older_prices_and_keeps_their_chart_separate(self, _today):
+        self.add("Only Today", "45", spec="Unspecified", source="LGU")
+        older = DAY - timedelta(days=16)
+        self.add("Older North", "25", day=older)
+        self.add("Older South", "30", day=older)
+
+        response = self.client.get("/compare/")
+        self.assertContains(response, "All matching market prices")
+        self.assertContains(response, "Only Today")
+        self.assertContains(response, "Older North")
+        self.assertEqual(response.context["market_count"], 3)
+        chart, = response.context["comparison_charts"]
+        self.assertIn(older.isoformat(), chart["title"])
+        self.assertEqual([market["name"] for market in chart["markets"]], ["Older North", "Older South"])
+
+        narrow = self.client.get("/compare/", {"crop": "Tomato / Kamatis", "days": "7"})
+        self.assertContains(narrow, "Widen reporting window")
+        self.assertNotContains(narrow, "Older North")
+        self.assertIn("days=30", narrow.context["wider_window_query"])
+
+    @patch("core.regional_views.today", return_value=DAY)
+    def test_specification_and_exact_reporting_date_filter_independently(self, _today):
+        older = DAY - timedelta(days=16)
+        older_a = self.add("Market A", "25", day=older)
+        self.add("Market B", "30", day=older)
+        self.add("Market A", "40")
+        self.add("Older Grade B", "15", spec="Grade B", day=older)
+
+        base = {"crop": "Tomato / Kamatis"}
+        by_spec = self.client.get("/compare/", {**base, "product": older_a.product_key})
+        self.assertEqual({r.specification for r in by_spec.context["records"]}, {"Grade A"})
+        self.assertEqual({r.date for r in by_spec.context["records"]}, {DAY, older})
+
+        by_date = self.client.get("/compare/", {**base, "report_date": older.isoformat(), "days": "7"})
+        self.assertEqual({r.date for r in by_date.context["records"]}, {older})
+        self.assertEqual({r.specification for r in by_date.context["records"]}, {"Grade A", "Grade B"})
+
+        filters = {**base, "report_date": older.isoformat(), "product": older_a.product_key}
+        both = self.client.get("/compare/", filters)
+        self.assertEqual({(r.market, r.low) for r in both.context["records"]}, {
+            ("Market A", Decimal("25")), ("Market B", Decimal("30")),
+        })
+        chart, = both.context["comparison_charts"]
+        self.assertIn(older.isoformat(), chart["title"])
+        csv = self.client.get("/compare/", {**filters, "format": "csv"})
+        self.assertContains(csv, older.isoformat())
+        self.assertNotContains(csv, "Grade B")

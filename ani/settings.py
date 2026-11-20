@@ -127,6 +127,8 @@ ANI_SCRAPER_URLS = {
     "local_market": os.environ.get("ANI_SCRAPER_LOCAL_URL", ""),
 }
 ANI_SCRAPER_TIMEOUT = int(os.environ.get("ANI_SCRAPER_TIMEOUT", "20"))
+ANI_KADIWA_OUTLET_PRICE_LIST_URL = os.environ.get("ANI_KADIWA_OUTLET_PRICE_LIST_URL", "").strip()
+
 ANI_SCRAPER_USER_AGENT = os.environ.get(
     "ANI_SCRAPER_USER_AGENT",
     "AniPriceBot/1.0 (crop price aggregation for farmers; contact: support@ani.example)",

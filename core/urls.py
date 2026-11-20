@@ -1,6 +1,8 @@
 from django.urls import path
 
 from . import views
+from .crop_browse import crop_family
+from .farmgate import farmgate_prices
 from .regional_views import regional_report
 
 urlpatterns = [
@@ -8,8 +10,11 @@ urlpatterns = [
     path("about/", views.landing, name="about"),
     path("home/", views.home, name="home"),
     path("prices/", views.market_prices, name="prices"),
+    path("prices/farmgate/", farmgate_prices, name="farmgate_prices"),
+    path("crops/family/<slug:slug>/", crop_family, name="crop_family"),
     path("crops/<slug:slug>/", views.crop_detail, name="crop_detail"),
     path("compare/", views.compare, name="compare"),
+    path("compare/offers/", views.buyer_offers, name="buyer_offers"),
     path("reports/regions/", regional_report, name="regional_report"),
     path("alerts/", views.alerts, name="alerts"),
     path("alerts/new/", views.alert_new, name="alert_new"),

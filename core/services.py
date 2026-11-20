@@ -270,6 +270,25 @@ def price_trend(db, crop, market, days, as_of=None):
     return [(d, money(p)) for d, p in db.execute(stmt)]
 
 
+def market_price_history(db, crop, days, as_of=None):
+    """Published daily prices and their market labels, including other locations."""
+    as_of = as_of or today()
+    start = as_of - timedelta(days=days - 1)
+    stmt = (
+        select(Market, CropPrice.date, CropPrice.price)
+        .join(CropPrice, CropPrice.market_id == Market.id)
+        .where(CropPrice.crop_id == crop.id, CropPrice.unit == crop.unit, CropPrice.date.between(start, as_of))
+        .order_by(Market.name, Market.location, Market.id, CropPrice.date, CropPrice.collected_at, CropPrice.id)
+    )
+    histories = {}
+    for market, day, price in db.execute(stmt):
+        history = histories.setdefault(str(market.id), {
+            "label": f"{market.name} · {market.location}", "points": {},
+        })
+        history["points"][day] = float(price)
+    return histories
+
+
 def price_stats(db, crop, location, days, as_of=None):
     """Highest, lowest and average price across a location's markets over a period."""
     as_of = as_of or today()

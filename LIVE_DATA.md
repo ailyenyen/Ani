@@ -10,6 +10,8 @@
 
 Kadiwa program coverage follows the restrictions in the source report. Each source publishes on its own schedule. Collection time records when ANI retrieved the publication. Use its reporting date to judge the age of the price.
 
+The standalone Kadiwa outlet importer is optional. Set `ANI_KADIWA_OUTLET_PRICE_LIST_URL` only after confirming that the publisher provides an outlet-level price bulletin at a public HTTPS URL. The HTML table must use `Product`, `Kadiwa Center`, `Province`, `Unit`, and `Price (PHP)` headers. Provide a dated bulletin or a `Date` column. An optional `Specification` column preserves the published grade. The importer keeps supported crops quoted per kilogram and archives the bulletin separately from DA-reported program rice. Run `python manage.py sync_regions --source kadiwa` to verify the configured source in a live-mode test database. Scheduled refreshes include it when configured.
+
 ## Import and refresh
 
 Follow the [README setup](README.md#run-with-published-prices) first. The live example enables live mode through `ANI_SAMPLE_DATA_NOTICE=false`. Give live prices their own database. The local database, environment file, downloaded reports and scraper logs are excluded from Git.
@@ -24,8 +26,20 @@ The following commands use the project environment's Python interpreter:
 | `python manage.py sync_regions --source infanta` | Refresh the municipal bulletin only. |
 | `python manage.py publish_catalog` | After upgrading an installation with existing regional quotes, publish unlinked observations into the shared catalog. Safe to rerun. |
 | `python manage.py check_alerts` | Evaluate active alerts against the shared price catalog. |
+| `python manage.py refresh_live` | Run both imports and then evaluate alerts. Use `--no-alerts` for an import-only run. |
+| `python manage.py sync_farmgate` | Refresh the separate PSA farmgate snapshot for green Lakatan, Latundan, and Saba in CALABARZON. |
 
-On Windows, `Refresh-LiveData.ps1` runs both imports without sending notifications. It returns a nonzero exit code if either command fails. Run it manually or schedule it in Windows Task Scheduler. To send alerts after a successful refresh, run `check_alerts` separately. In live mode, `manage.py scrape` processes the weekly publications and checks alerts unless `--no-alerts` is supplied.
+On Windows, `Refresh-LiveData.ps1` runs the combined job. `-NoAlerts` skips alert evaluation. The job attempts both imports and evaluates alerts against the saved catalog if at least one importer completes successfully. It exits with an error if either importer reports a failure, so the scheduler can surface incomplete runs.
+
+The Banana / Saging page reads `data/farmgate/psa-banana-calabarzon.json` in live mode. The importer uses the [PSA Fruits Farmgate OpenSTAT table](https://openstat.psa.gov.ph/PXWeb/pxweb/en/DB/DB__2M__NFG/0032M4AFN07.px/), skips unpublished values, and keeps the existing snapshot on a failed refresh. The card displays each variety's latest published month. Refresh this snapshot independently of the retail jobs.
+
+Run `./Register-LiveDataTask.ps1 -At 07:00` from the live installation to schedule the job daily in the host's local time. On a server with another scheduler, schedule `python manage.py refresh_live` from the app directory using its Python environment. Use a single scheduled instance and an account with access to the app configuration, database, report archives, and Firebase credentials.
+
+## PostgreSQL and browser push
+
+For a fresh local PostgreSQL deployment, start the provided database with `docker compose up -d db` and set `ANI_DATABASE_URL=postgresql+psycopg2://ani:ani@localhost:5432/ani` for that development instance. Use dedicated credentials and an empty live database on the deployment host. Run `python manage.py initdb`, followed by `python manage.py refresh_live --no-alerts` for the initial import.
+
+Populate the `FCM_` and `FIREBASE_` settings listed in `.env.example` for the same Firebase project, and set `ANI_SITE_URL` to the deployed HTTPS origin. Keep the service-account file outside version control. A signed-in user enables the browser under **Profile → Notification Settings**. Verify with a test account and a qualifying alert, then check both the browser notification and ANI's Price Alerts history.
 
 ## Comparisons and evidence
 

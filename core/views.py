@@ -1,5 +1,7 @@
 import json
+from collections import defaultdict
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -8,14 +10,16 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_http_methods, require_POST
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
 
 from . import auth, services
 from .alerts import check_alerts, describe_alert
-from .forms import LoginForm, PriceAlertForm, ProfileForm, SignupForm
-from .models import DeviceToken, Market, Notification, PriceAlert, SavedCrop, User
+from .crop_browse import catalog, group_summaries
+from .forms import BuyerOfferForm, HarvestQuantityForm, LoginForm, PriceAlertForm, ProfileForm, SignupForm
+from .models import CropPrice, DeviceToken, Market, Notification, PriceAlert, SavedCrop, User
 from .templatetags.ani_tags import peso
 
 
@@ -77,6 +81,8 @@ def landing(request):
     locations = services.list_locations(db)
     location = _location_for(request, locations, require_specific=True)
     summaries = services.summarize_by_crop(services.latest_prices(db, location=location or None))
+    listings = catalog(db)
+    grouped = group_summaries(summaries, listings)
     best = None
     if summaries:
         compare_rows = services.compare_markets(db, summaries[0].crop, location)
@@ -87,11 +93,11 @@ def landing(request):
         "core/landing.html",
         {
             "location": location,
-            "preview": summaries[:4],
-            "today": summaries[:6],
+            "preview": grouped[:4],
+            "today": grouped[:6],
             "best": best,
             "stats": {
-                "crop_count": len(services.list_crops(db)),
+                "crop_count": len({item.family.slug for item in listings.values()}),
                 "market_count": db.scalar(select(func.count(Market.id))),
                 "location_count": len(locations),
                 "source_count": len(services.list_sources(db)),
@@ -111,6 +117,8 @@ def home(request):
     by_id = {s.crop.id: s for s in summaries}
     ordered = [by_id[cid] for cid in saved_ids if cid in by_id]
     ordered += [s for s in summaries if s.crop.id not in saved_ids]
+    listings = catalog(db)
+    grouped = group_summaries(ordered, listings)
 
     featured = ordered[0] if ordered else None
     chart = None
@@ -123,7 +131,7 @@ def home(request):
     if location:
         markets_stmt = markets_stmt.where(Market.location == location)
     stats = {
-        "crop_count": len(summaries),
+        "crop_count": len(grouped),
         "source_count": len(services.list_sources(db)),
         "market_count": db.scalar(markets_stmt),
         "saved_count": len(saved_ids),
@@ -141,7 +149,8 @@ def home(request):
             "location": location,
             "featured": featured,
             "chart": chart,
-            "latest": ordered[:6],
+            "latest": grouped[:6],
+            "featured_family": listings[featured.crop.id].family if featured else None,
             "has_saved": bool(saved_ids),
             "last_update": services.last_price_date(db),
         },
@@ -150,46 +159,82 @@ def home(request):
 
 def market_prices(request):
     db = request.db
-    crops = services.list_crops(db)
+    listings = catalog(db)
+    families = defaultdict(list)
+    for item in listings.values():
+        families[item.family.slug].append(item)
     locations = services.list_locations(db)
     location = _location_for(request, locations)
 
     crop_slug = request.GET.get("crop", "")
-    crop = next((c for c in crops if c.slug == crop_slug), None)
+    if crop_slug not in families:
+        crop_slug = next((item.family.slug for item in listings.values() if item.crop.slug == crop_slug), "")
     when = request.GET.get("when", "today")
     if when not in {key for key, _l, _d in services.WHEN_CHOICES}:
         when = "today"
     category = request.GET.get("category", "")
     source = request.GET.get("source", "")
     sort = request.GET.get("sort", "")
+    search = request.GET.get("q", "").strip()
+    as_of = services.as_of_for(when)
 
     rows = services.latest_prices(
         db,
-        as_of=services.as_of_for(when),
+        as_of=as_of,
         location=location or None,
-        crop_ids=[crop.id] if crop else None,
+        crop_ids=[item.crop.id for item in families[crop_slug]] if crop_slug else None,
         category=category or None,
         source=source or None,
     )
     summaries = services.sort_summaries(services.summarize_by_crop(rows), sort)
 
+    groups = {group["family"].slug: group for group in group_summaries(summaries, listings)}
+    results = []
+    for slug, items in families.items():
+        if crop_slug and slug != crop_slug:
+            continue
+        if category and not any(item.crop.category == category for item in items):
+            continue
+        if slug not in groups and (location or source or when != "today"):
+            continue
+        family = items[0].family
+        searchable = " ".join([family.name, *family.aliases] + [
+            f"{item.product} {item.variety} {item.crop.name} {item.specification}" for item in items
+        ]).casefold()
+        if not all(term in searchable for term in search.casefold().split()):
+            continue
+        result = groups.get(slug, {"family": family, "listing": items[0]})
+        result["varieties"] = sorted({item.variety for item in items})
+        results.append(result)
+
+    if sort == "name":
+        results.sort(key=lambda group: group["family"].name)
+    elif sort in {"price_high", "price_low", "change"}:
+        positions = {slug: i for i, slug in enumerate(groups)}
+        results.sort(key=lambda group: positions.get(group["family"].slug, len(positions)))
+
+    link_query = {key: value for key, value in {"location": location, "source": source}.items() if value}
+    if when != "today":
+        link_query["date_to"] = as_of.isoformat()
     return render(
         request,
         "core/prices.html",
         {
-            "crops": crops,
+            "crops": sorted((items[0].family for items in families.values()), key=lambda family: family.name),
             "locations": locations,
             "location": location,
-            "selected_crop": crop,
+            "selected_crop": crop_slug,
             "when": when,
             "when_choices": services.WHEN_CHOICES,
             "categories": services.list_categories(db),
-            "sources": services.list_sources(db),
+            "sources": list(db.scalars(select(CropPrice.source).distinct().order_by(CropPrice.source))),
             "category": category,
             "source": source,
             "sort": sort,
             "more_filters_open": bool(category or source or sort),
-            "summaries": summaries,
+            "groups": results,
+            "search": search,
+            "link_query": urlencode(link_query),
         },
     )
 
@@ -212,11 +257,23 @@ def crop_detail(request, slug):
     rows.sort(key=lambda r: -r.price)
     headline = services.pick_headline(rows) if rows else None
 
-    chart = None
-    if headline:
-        range_label = dict(services.RANGE_CHOICES)[days]
-        points = services.price_trend(db, crop, headline.market, days)
-        chart = services.chart_data(points, f"{crop.name} Price — Last {range_label}")
+    histories = services.market_price_history(db, crop, days)
+    requested = set(request.GET.getlist("trend_market"))
+    if "trend_market" in request.GET:
+        selected = [market_id for market_id in histories if market_id in requested]
+    else:
+        preferred = ([headline] if headline else []) + rows
+        selected = list(dict.fromkeys(str(row.market.id) for row in preferred if str(row.market.id) in histories))[:2]
+        if not selected:
+            selected = list(histories)[:2]
+
+    dates = sorted({day for market_id in selected for day in histories[market_id]["points"]})
+    series = [
+        {"label": histories[market_id]["label"],
+         "values": [histories[market_id]["points"].get(day) for day in dates]}
+        for market_id in selected
+    ]
+    trend_chart = {"labels": [day.isoformat() for day in dates], "series": series, "unit": crop.unit} if series else None
 
     return render(
         request,
@@ -227,7 +284,9 @@ def crop_detail(request, slug):
             "location": location,
             "rows": rows,
             "headline": headline,
-            "chart": chart,
+            "trend_chart": trend_chart,
+            "trend_markets": histories,
+            "selected_markets": selected,
             "days": days,
             "range_choices": services.RANGE_CHOICES,
             "range_label": dict(services.RANGE_CHOICES)[days],
@@ -235,6 +294,35 @@ def crop_detail(request, slug):
             "is_saved": crop.id in services.saved_crop_ids(db, user),
         },
     )
+
+
+@never_cache
+@require_http_methods(["GET", "HEAD", "POST"])
+def buyer_offers(request):
+    data = request.POST if request.method == "POST" else None
+    harvest = HarvestQuantityForm(data)
+    offers = [("Offer A", BuyerOfferForm(data, prefix="offer_a")), ("Offer B", BuyerOfferForm(data, prefix="offer_b"))]
+    results = []
+    better_offer = None
+    difference = None
+
+    if data is not None and all([harvest.is_valid(), *(form.is_valid() for _, form in offers)]):
+        quantity = harvest.cleaned_data["quantity"]
+        for name, form in offers:
+            offer = form.cleaned_data
+            gross = services.money(quantity * offer["price"])
+            costs = (offer["transport"] or Decimal("0")) + (offer["handling"] or Decimal("0"))
+            net = gross - costs
+            results.append({"name": name, "gross": gross, "costs": costs, "net": net, "per_kg": services.money(net / quantity)})
+        first, second = results
+        difference = abs(first["net"] - second["net"])
+        if difference:
+            better_offer = max(results, key=lambda result: result["net"])["name"]
+
+    return render(request, "core/buyer_offers.html", {
+        "harvest": harvest, "offers": offers, "results": results,
+        "better_offer": better_offer, "difference": difference,
+    })
 
 
 def compare(request):
@@ -509,6 +597,7 @@ def register_device(request):
         db.add(DeviceToken(user_id=request.ani_user.id, token=token))
     else:
         device.user_id = request.ani_user.id
+    request.ani_user.push_enabled = True
     db.commit()
     return JsonResponse({"ok": True})
 

@@ -1,23 +1,15 @@
 """Lowest-price rankings only within the same product, specification, unit and date."""
-import re
 from collections import defaultdict
 from datetime import timedelta
 
 from sqlalchemy import select
 
+from .crop_families import identify_family
 from .models import RegionalQuote, RegionalImport
 
 
 def family(product):
-    text = product.casefold()
-    if "rice" in text or "commercial (" in text or text == "nfa":
-        return "Rice"
-    aliases = {"tomato": "Tomato / Kamatis", "kamatis": "Tomato / Kamatis", "eggplant": "Eggplant / Talong", "talong": "Eggplant / Talong",
-        "garlic": "Garlic / Bawang", "bawang": "Garlic / Bawang", "calamansi": "Calamansi", "kalamansi": "Calamansi",
-        "carrot": "Carrot", "karot": "Carrot", "onion": "Onion", "sibuyas": "Onion", "potato": "Potato", "patatas": "Potato",
-        "cabbage": "Cabbage", "repolyo": "Cabbage", "banana": "Banana", "lakatan": "Banana", "latundan": "Banana",
-        "mango": "Mango", "mangga": "Mango", "chili": "Chili", "chilli": "Chili", "sili": "Chili"}
-    return next((name for alias, name in aliases.items() if alias in text), product.title())
+    return identify_family(product).name
 
 
 def build_report(db, as_of, days, regions=(), source="", crop="Tomato / Kamatis", product=""):
@@ -31,17 +23,17 @@ def build_report(db, as_of, days, regions=(), source="", crop="Tomato / Kamatis"
     latest = {}
     for row in records:
         if family(row.product) == crop:
-            latest.setdefault((row.source, row.region, row.market, row.product_key), row)
+            latest.setdefault((row.source, row.region, row.market, row.product_key, row.unit), row)
     records = list(latest.values())
     product_options = sorted({(r.product_key, r.product + " · " + r.specification) for r in records}, key=lambda x:x[1])
     if product:
         records = [r for r in records if r.product_key == product]
     grouped, by_source = defaultdict(list), defaultdict(list)
     for row in records:
-        grouped[(row.product_key, row.date)].append(row)
+        grouped[(row.product_key, row.unit, row.date)].append(row)
         by_source[row.source].append(row)
     groups = []
-    for (_, day), rows in grouped.items():
+    for (_, unit, day), rows in grouped.items():
         rows.sort(key=lambda r: (r.low, r.high, r.region, r.market, r.source))
         lowest = rows[0].low
         winners = [r for r in rows if r.low == lowest]
@@ -49,7 +41,8 @@ def build_report(db, as_of, days, regions=(), source="", crop="Tomato / Kamatis"
         for row in rows:
             region_rows[row.region].append(row)
         groups.append({"product": rows[0].product, "specification": rows[0].specification, "date": day,
-            "rows": rows, "lowest": lowest, "winners": winners,
+            "rows": rows, "unit": unit, "lowest": lowest, "winners": winners,
+            "market_count": len({(r.region, r.market) for r in rows}),
             "regional": [{"name": name, "low": items[0].low, "high": items[0].high,
                           "markets": [r for r in items if r.low == items[0].low]} for name, items in sorted(region_rows.items(), key=lambda item:(item[1][0].low,item[0]))]})
     groups.sort(key=lambda g:(g["product"], g["specification"], -g["date"].toordinal()))

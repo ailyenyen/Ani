@@ -14,11 +14,11 @@ python -m venv .venv
 For a new checkout, copy `.env.live.example` to `.env` and edit `ANI_DATABASE_URL` to point to a dedicated SQLite file or PostgreSQL database. On an existing installation, keep the configured `.env`. Then run:
 
 ```powershell
-.\Refresh-LiveData.ps1
+.\Refresh-LiveData.ps1 -NoAlerts
 .\.venv\Scripts\python.exe -X utf8 manage.py runserver 127.0.0.1:8000
 ```
 
-Open [Home](http://127.0.0.1:8000/home/) to browse the latest prices. In [Compare Markets](http://127.0.0.1:8000/compare/), select a crop and expand the region, date and specification filters. The page identifies the lowest published price for comparable observations, shows tied markets, and exports the filtered observations to CSV. Sign up to save crops and create alerts.
+Open [Home](http://127.0.0.1:8000/home/) to browse the latest prices. In [Compare Markets](http://127.0.0.1:8000/compare/), select a crop and expand the region, date and specification filters. The page charts comparable market prices, identifies ties for the lowest published price, and exports the filtered observations to CSV. Open Crop Details to select markets and a time period for the trend chart. Sign up to save crops and create alerts.
 
 ## Run the offline demo
 
@@ -35,7 +35,7 @@ The seed command creates the tables, 120 days of generated prices and the local 
 
 | Component | Implementation |
 |---|---|
-| Web application | Python, Django 4.2, server-rendered templates, CSS, JavaScript and Chart.js |
+| Web application | Python, Django 4.2, server-rendered templates, CSS, Tailwind utilities, JavaScript and Chart.js |
 | Storage | SQLAlchemy 2.0, SQLite for local use or PostgreSQL with psycopg2. Docker Compose provides an optional PostgreSQL 16 instance. |
 | Collection | Requests and BeautifulSoup read regional market tables and Infanta bulletins. pdfplumber extracts weekly DA-AMAS reports. |
 | Catalog | Weekly and regional importers populate the shared crops, markets, prices and evidence used throughout the app. Regional quotes preserve both endpoints of a price range. |
@@ -53,3 +53,5 @@ Run Django's checks and the test suite from the repository root:
 ```
 
 For deployment, configure HTTPS, a strong `DJANGO_SECRET_KEY`, allowed hosts and `DJANGO_DEBUG=false`. Serve collected static files and schedule the live imports. The app creates tables with SQLAlchemy metadata. Existing deployments need an explicit migration for changes to existing columns.
+
+The generated Tailwind stylesheet is included. After changing Tailwind classes, run `npm ci` and `npm run build:css` before collecting static files.

@@ -58,11 +58,11 @@
               <span class="lp-live"><span class="lp-live-dot" aria-hidden="true"></span>{{ last_update|updated_label|default:"Updated daily" }}</span>
             </div>
             <ul class="row-list">
-              {% for s in preview %}{% with row=s.headline %}
+              {% for group in preview %}{% with row=group.summary.headline %}
                 <li class="row-item">
-                  <span class="crop-icon" aria-hidden="true">{{ s.crop.icon }}</span>
-                  <span class="row-main"><strong>{{ s.crop.name }}</strong><span>{{ row.market.name }}</span></span>
-                  <span class="row-end"><span class="price-md">{{ row.display_price }}<span class="unit">/{{ s.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
+                  <span class="crop-icon" aria-hidden="true">{{ row.crop.icon }}</span>
+                  <span class="row-main"><strong>{{ group.family.name }}</strong><span>{{ group.listing.variety }} · {{ row.market.name }}</span></span>
+                  <span class="row-end"><span class="price-md">{{ row.display_price }}<span class="unit">/{{ row.crop.unit }}</span></span>{% include "core/partials/change.html" with row=row %}</span>
                 </li>
               {% endwith %}{% empty %}
                 <li class="row-item"><span class="row-main"><strong>Prices are on their way</strong><span>Check back soon.</span></span></li>
@@ -105,7 +105,7 @@
           <article class="card lp-feature reveal">
             <span class="icon-badge solid">{% icon 'compare' 22 %}</span>
             <h3>Market comparison</h3>
-            <p>Compare DA Bantay Presyo, Kadiwa and local markets side by side. The highest price is marked.</p>
+            <p>Compare published prices across markets and check when each price was reported.</p>
           </article>
           <article class="card lp-feature reveal">
             <span class="icon-badge solid">{% icon 'bell' 22 %}</span>
@@ -136,7 +136,7 @@
           <li class="reveal">
             <span class="lp-step-num">2</span>
             <h3>Compare markets</h3>
-            <p>See every market's price in one view and find out where your crop sells highest.</p>
+            <p>See comparable market prices side by side and use them as a reference when evaluating offers.</p>
           </li>
           <li class="reveal">
             <span class="lp-step-num">3</span>
@@ -158,7 +158,7 @@
         </div>
         <div class="card flush reveal">
           {% if today %}
-            {% include "core/partials/price_table.html" with summaries=today variant="prices" %}
+            {% include "core/partials/crop_groups.html" with groups=today %}
           {% else %}
             <div class="empty-state"><h3>No prices yet</h3><p>Prices will appear here as soon as they are collected.</p></div>
           {% endif %}

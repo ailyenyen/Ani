@@ -1,0 +1,86 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}{{ family.name }} prices{% endblock %}
+{% block header %}{% url 'prices' as prices_url %}{% include "core/partials/page_title.html" with title=family.name back=prices_url back_label="Back to Market Prices" %}{% endblock %}
+{% block content %}
+{% if show_farmgate %}
+<section class="card farmgate-reference" aria-labelledby="farmgate-title">
+  <div class="card-head">
+    <div><h2 id="farmgate-title">Farmgate Prices</h2><p class="card-sub">CALABARZON · Latest published monthly averages</p></div>
+    <a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}{% if farmgate_has_crop %}?crop={{ family.slug|urlencode }}&amp;location=regions{% endif %}">Browse Farmgate Prices</a>
+  </div>
+  {% if farmgate_prices %}
+  <ul class="farmgate-grid">
+    {% for observation in farmgate_prices %}<li>
+      <strong>{{ observation.product }}</strong>
+      <span class="price-md">{{ observation.price|peso }}{% if observation.unit %}<span class="unit">/{{ observation.unit }}</span>{% endif %}</span>
+      <time datetime="{{ observation.month|date:'Y-m' }}">{{ observation.month|date:"F Y" }}</time>
+      <a href="{{ observation.source_url }}" target="_blank" rel="noopener">{% if observation.unit %}PSA OpenSTAT{% else %}PSA source and unit{% endif %}</a>
+    </li>{% endfor %}
+  </ul>
+  {% else %}<p class="muted">No published farmgate price is available for this selection.</p>{% endif %}
+  <p class="hint">These are regional prices received by producers. Market and date filters below apply to retail reports.</p>
+</section>
+{% endif %}
+<section class="card" aria-labelledby="crop-reports-title">
+  <div class="card-head">
+    <h2 id="crop-reports-title">Published Retail Prices</h2>
+    <div class="filter-bar">
+      {% if has_regional_comparisons %}<a class="btn btn-soft btn-small" href="{% url 'compare' %}?crop={{ family.name|urlencode }}">Compare Markets</a>{% endif %}
+      <a class="btn btn-soft btn-small" href="{% url 'buyer_offers' %}">Compare Buyer Offers</a>
+    </div>
+  </div>
+  <form method="get" action="{% url 'crop_family' family.slug %}">
+    <details class="more-filters crop-family-filters"{% if active_filters or form.errors %} open{% endif %}>
+      <summary>{% icon 'sliders' 18 %} Filters{% if active_filters %} · Applied{% endif %}</summary>
+      <div class="crop-filter-fields">
+        {% for field in form %}<div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+      </div>
+      {{ form.non_field_errors }}
+      <div class="filter-bar">
+        <button class="btn btn-primary btn-small" type="submit">Apply filters</button>
+        <a class="btn btn-soft btn-small" href="{% url 'crop_family' family.slug %}">Clear filters</a>
+      </div>
+    </details>
+  </form>
+  {% if page.object_list %}
+    <p class="result-line">{{ page.paginator.count }} price report{{ page.paginator.count|pluralize }} · {% if has_date_range %}Selected dates{% else %}Latest per listing, market, and source{% endif %}</p>
+    <div class="report-table wide-only">
+      <table class="data-table crop-report-table">
+        <thead><tr><th scope="col">Variety / product</th><th scope="col">Market</th><th scope="col">Reported price</th><th scope="col">Source and date</th><th scope="col"><span class="sr-only">More details</span></th></tr></thead>
+        <tbody>
+        {% for listing, price, quote in page.object_list %}
+        <tr>
+          <th scope="row"><strong>{{ listing.variety }}</strong><small>{{ listing.product }}{% if listing.specification %} · {{ listing.specification }}{% endif %}</small></th>
+          <td>{{ price.market.name }}<small>{{ price.market.location }}</small></td>
+          <td class="td-price">{% include "core/partials/crop_report_amount.html" %}</td>
+          <td>{% include "core/partials/crop_report_source.html" %}</td>
+          <td><a href="{% url 'crop_detail' listing.crop.slug %}?location={{ price.market.location|urlencode }}">Trend &amp; alerts<span class="sr-only"> for {{ listing.product }}</span></a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <ul class="row-list narrow-only crop-report-list">
+      {% for listing, price, quote in page.object_list %}
+        <li>
+          <div class="crop-report-mobile-heading"><strong>{{ listing.variety }}</strong><span class="td-price">{% include "core/partials/crop_report_amount.html" %}</span></div>
+          <small>{{ listing.product }}{% if listing.specification %} · {{ listing.specification }}{% endif %}</small>
+          <span>{{ price.market.name }} · {{ price.market.location }}</span>
+          <small>{% include "core/partials/crop_report_source.html" %}</small>
+          <a href="{% url 'crop_detail' listing.crop.slug %}?location={{ price.market.location|urlencode }}">Trend &amp; alerts<span class="sr-only"> for {{ listing.product }}</span></a>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if page.has_other_pages %}
+    <nav class="filter-bar crop-report-pages" aria-label="Price report pages">
+      {% if page.has_previous %}<a class="btn btn-soft btn-small" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page.previous_page_number }}">Previous</a>{% endif %}
+      <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}<a class="btn btn-soft btn-small" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page.next_page_number }}">Next</a>{% endif %}
+    </nav>
+    {% endif %}
+  {% else %}
+    <p class="muted">{% if form.errors %}Check the highlighted filters and try again.{% else %}No published prices match. Try clearing a filter or choosing a different date range.{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}

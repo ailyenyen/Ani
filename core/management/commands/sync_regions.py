@@ -1,5 +1,6 @@
 import hashlib
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import requests
 from django.conf import settings
@@ -11,6 +12,7 @@ from core.catalog import publish, remove_batch
 from core.models import RegionalQuote, RegionalImport, utcnow
 from core.services import today
 from scrapers.base import ScraperError
+from scrapers.kadiwa import KADIWA_OUTLET_SOURCE, parse_outlet_price_list
 from scrapers.regional import (PORTAL, INFANTA, DA_SOURCE, LGU_SOURCE, CATEGORIES,
                               discover_regions, fetch_da, fetch, parse_infanta, product_key)
 
@@ -45,16 +47,19 @@ def store(source, region, category, report_date, quotes, archive, url, warning="
 
 
 class Command(BaseCommand):
-    help = "Collect regional market crop prices from Bantay Presyo and Infanta LGU."
+    help = "Collect regional crop prices from Bantay Presyo, Infanta and a configured Kadiwa outlet bulletin."
 
     def add_arguments(self, parser):
         parser.add_argument("--regions", nargs="*", help="Portal region codes; default: all published options.")
         parser.add_argument("--categories", nargs="+", default=list(CATEGORIES), choices=list(CATEGORIES))
-        parser.add_argument("--source", choices=["all", "da", "infanta"], default="all")
+        parser.add_argument("--source", choices=["all", "da", "infanta", "kadiwa"], default="all")
 
     def handle(self, *args, regions, categories, source, **options):
         if settings.ANI_SAMPLE_DATA_NOTICE:
             raise CommandError("Use the live database configuration for real regional imports.")
+        kadiwa_url = settings.ANI_KADIWA_OUTLET_PRICE_LIST_URL
+        if source == "kadiwa" and not kadiwa_url:
+            raise CommandError("Configure ANI_KADIWA_OUTLET_PRICE_LIST_URL with a verified public price bulletin first.")
         create_tables()
         failures = 0
         session = requests.Session()
@@ -96,6 +101,18 @@ class Command(BaseCommand):
                     self.stdout.write(f"Infanta / {day}: {len(quotes)} prices")
                 except (ScraperError, OSError) as exc:
                     failed(LGU_SOURCE, "REGION IV-A (CALABARZON)", "Crops", exc)
+            if source in {"all", "kadiwa"} and kadiwa_url:
+                try:
+                    url = urlsplit(kadiwa_url)
+                    if url.scheme != "https" or not url.hostname or url.username or len(kadiwa_url) > 300:
+                        raise ScraperError("Use a public HTTPS URL for the Kadiwa price list.")
+                    content = fetch(session, kadiwa_url)
+                    batches = parse_outlet_price_list(content, today())
+                    for (day, province), quotes in sorted(batches.items()):
+                        store(KADIWA_OUTLET_SOURCE, province, "Crops", day, quotes, content, kadiwa_url)
+                        self.stdout.write(f"Kadiwa / {province} / {day}: {len(quotes)} prices")
+                except (ScraperError, OSError, ValueError) as exc:
+                    failed(KADIWA_OUTLET_SOURCE, "Kadiwa bulletin", "Crops", exc)
         finally:
             session.close()
         if failures:
