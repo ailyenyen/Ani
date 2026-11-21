@@ -5,8 +5,7 @@
 {% block content %}
 <div class="cm-layout">
 <div class="offer-entry filter-bar">
-  {% if live_reports %}<a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}">Compare Farmgate Prices</a>{% endif %}
-  <a class="btn btn-soft btn-small" href="{% url 'buyer_offers' %}">Compare Buyer Offers</a>
+  {% if live_reports %}<a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}">Compare Farmgate Prices</a><a class="btn btn-soft btn-small" href="{% url 'wholesale_prices' %}">Compare Wholesale Prices</a>{% endif %}
 </div>
 <form class="cm-controls card" method="get" action="{% url 'compare' %}" data-comparison-filters>
   <div class="cm-fields cm-report-filters">

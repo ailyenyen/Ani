@@ -26,14 +26,28 @@ The following commands use the project environment's Python interpreter:
 | `python manage.py sync_regions --source infanta` | Refresh the municipal bulletin only. |
 | `python manage.py publish_catalog` | After upgrading an installation with existing regional quotes, publish unlinked observations into the shared catalog. Safe to rerun. |
 | `python manage.py check_alerts` | Evaluate active alerts against the shared price catalog. |
-| `python manage.py refresh_live` | Run both imports and then evaluate alerts. Use `--no-alerts` for an import-only run. |
-| `python manage.py sync_farmgate` | Refresh the separate PSA farmgate snapshot for green Lakatan, Latundan, and Saba in CALABARZON. |
+| `python manage.py refresh_live` | Run both real-time retail imports and then evaluate alerts. Use `--no-alerts` for an import-only run and `--monthly` to also refresh the three PSA monthly series below. |
+| `python manage.py sync_farmgate` | Refresh the PSA farmgate snapshots (prices received by producers) for all published locations. |
+| `python manage.py sync_wholesale` | Refresh the PSA wholesale selling price snapshots for all published locations. |
+| `python manage.py sync_psa_retail` | Refresh the PSA monthly retail average snapshots for all published locations. |
 
 On Windows, `Refresh-LiveData.ps1` runs the combined job. `-NoAlerts` skips alert evaluation. The job attempts both imports and evaluates alerts against the saved catalog if at least one importer completes successfully. It exits with an error if either importer reports a failure, so the scheduler can surface incomplete runs.
 
+## PSA monthly series: farmgate, wholesale and retail
+
+The Philippine Statistics Authority publishes three monthly price series with the same layout (location × commodity × month) on [OpenSTAT](https://openstat.psa.gov.ph/). One importer, `scrapers/psa_openstat.py`, reads all three:
+
+| Series | OpenSTAT folder | Tables | Snapshot folder | Page |
+|---|---|---|---|---|
+| Farmgate prices | `NFG` | `0032M4AFN01`–`09` | `data/farmgate/` | `/prices/farmgate/` |
+| Wholesale selling prices | `NWSNEW` | `0052M4AWB01`–`08` | `data/wholesale/` | `/prices/wholesale/` |
+| Retail prices (monthly averages) | `2018NEW` | `0042M4ARN01`–`08` | `data/retail/` | `/prices/retail/monthly/` |
+
+Each table covers one crop category (cereals, root crops, beans and legumes, condiments, fruit vegetables, leafy vegetables, fruits, commercial crops) for the current and previous year. Values are published about two months after the month they cover, so ANI shows them as an official reference, next to and separate from the real-time retail catalog: Retail prices (on Home, Retail Prices, crop details and alerts) keep using the weekly DA reports and regional sources, which keep updating. Crop pages show the latest CALABARZON value from each series. Home (Market prices) shows one card per crop with its latest retail, wholesale and farmgate price for the chosen region or the whole country; regions are matched across sources by name. Each PSA table numbers locations differently, so locations are matched by name.
+
 The Banana / Saging page reads `data/farmgate/psa-banana-calabarzon.json` in live mode. The importer uses the [PSA Fruits Farmgate OpenSTAT table](https://openstat.psa.gov.ph/PXWeb/pxweb/en/DB/DB__2M__NFG/0032M4AFN07.px/), skips unpublished values, and keeps the existing snapshot on a failed refresh. The card displays each variety's latest published month. Refresh this snapshot independently of the retail jobs.
 
-Run `./Register-LiveDataTask.ps1 -At 07:00` from the live installation to schedule the job daily in the host's local time. On a server with another scheduler, schedule `python manage.py refresh_live` from the app directory using its Python environment. Use a single scheduled instance and an account with access to the app configuration, database, report archives, and Firebase credentials.
+Run `./Register-LiveDataTask.ps1 -At 07:00` from the live installation to schedule the job daily in the host's local time. On macOS, `./refresh-live-data.sh` runs the same job (`--no-alerts`, `--monthly`), and `./register-live-data-agent.sh` schedules it with launchd: live retail every 3 hours and the PSA monthly series each Monday at 07:00 (`./register-live-data-agent.sh remove` uninstalls it). Logs go to `logs/`. On a server with another scheduler, schedule `python manage.py refresh_live` from the app directory using its Python environment. Use a single scheduled instance and an account with access to the app configuration, database, report archives, and Firebase credentials.
 
 ## PostgreSQL and browser push
 
@@ -45,7 +59,7 @@ Populate the `FCM_` and `FIREBASE_` settings listed in `.env.example` for the sa
 
 Compare Markets ranks the latest available observation per market, source and product within the selected reporting window. It groups observations by product, specification, unit and source-reported date. If a source publishes a range, the lowest-price ranking uses its lower endpoint. All markets tied at that endpoint share the rank. The source comparison summarizes coverage and published ranges across the selected crop. NCR weekly series appear as benchmarks. The older `/reports/regions/` URL remains available.
 
-Home, Market Prices, crop details, saved crops and alerts use the shared catalog. Regional imports update the source records and catalog within one transaction. For a range, an above-target alert uses the lower endpoint and a below-target alert uses the upper endpoint.
+Retail prices on Home, Retail Prices, crop details, saved crops and alerts use the shared catalog. Regional imports update the source records and catalog within one transaction. For a range, an above-target alert uses the lower endpoint and a below-target alert uses the upper endpoint.
 
 Each published catalog price has a source URL, original row, reporting period and SHA-256 linking it to archived evidence. Weekly PDFs and extracted text are stored in `data/reports/`. Regional response snapshots are stored in `data/regional/`. Back up the database **and** these directories to retain the full evidence trail.
 

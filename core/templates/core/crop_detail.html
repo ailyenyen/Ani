@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}{{ crop.name }} price{% endblock %}
-{% block header %}{% url 'prices' as prices_url %}{% include "core/partials/page_title.html" with title="Crop Details" back=prices_url back_label="Back to Market Prices" %}{% endblock %}
+{% block header %}{% url 'prices' as prices_url %}{% include "core/partials/page_title.html" with title="Crop Details" back=prices_url back_label="Back to Retail Prices" %}{% endblock %}
 {% block content %}
 <div class="detail-layout">
   <section class="card" aria-labelledby="crop-name">
@@ -115,7 +115,7 @@
   <section class="card flush span-2" aria-labelledby="markets-title">
     <div class="card-head" style="margin-bottom:0">
       <div>
-        <h2 id="markets-title">Market Prices</h2>
+        <h2 id="markets-title">Retail prices by market</h2>
         <p class="card-sub">{{ location }} · highest price first</p>
       </div>
       {% if rows|length > 1 %}<a class="link-more" href="{% url 'compare' %}?crop={{ crop.slug }}&location={{ location|urlencode }}">Compare markets {% icon 'arrow-right' 16 %}</a>{% endif %}

@@ -24,6 +24,14 @@ def _site_link(path):
     return f"{base}{path}" if base else path
 
 
+def _crop_page(db, crop):
+    """The crop details page for the crop's family (the market page if it has no family)."""
+    from .crop_browse import catalog  # imported here: crop_browse imports this module's neighbours
+
+    listing = catalog(db).get(crop.id)
+    return reverse("crop_family", args=[listing.family.slug]) if listing else reverse("crop_detail", args=[crop.slug])
+
+
 def describe_alert(alert):
     word = "above" if alert.condition == PriceAlert.ABOVE else "below"
     return f"Notify me when the price is {word} {peso(alert.target_price)}/{alert.crop.unit}."
@@ -70,7 +78,7 @@ def check_alerts(db, as_of=None, alert_ids=None):
             f"({best.market.location}). That is {word} your target of "
             f"{peso(alert.target_price)}/{crop.unit}."
         )
-        link = _site_link(reverse("crop_detail", args=[crop.slug]))
+        link = _site_link(_crop_page(db, crop))
         notification = Notification(
             user=alert.user, alert_id=alert.id, title=title, message=message, link=link
         )

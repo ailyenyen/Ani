@@ -24,23 +24,33 @@
       </div>
       <nav>
         <ul class="side-nav">
-          <li><a href="{% url 'home' %}" title="Home" {% nav_active 'home' %}>{% icon 'home' 20 %}<span class="nav-label">Home</span></a></li>
-          <li><a href="{% url 'prices' %}" title="Market Prices" {% nav_active 'prices' 'crop_detail' 'crop_family' %}>{% icon 'store' 20 %}<span class="nav-label">Market Prices</span></a></li>
-          {% if live_reports %}<li><a href="{% url 'farmgate_prices' %}" title="Farmgate Prices" {% nav_active 'farmgate_prices' %}>{% icon 'wheat' 20 %}<span class="nav-label">Farmgate Prices</span></a></li>{% endif %}
-          <li><a href="{% url 'compare' %}" title="Compare Markets" {% nav_active 'compare' %}>{% icon 'compare' 20 %}<span class="nav-label">Compare Markets</span></a></li>
-          <li><a href="{% url 'buyer_offers' %}" title="Buyer Offers" {% nav_active 'buyer_offers' %}>{% icon 'bars' 20 %}<span class="nav-label">Buyer Offers</span></a></li>
+          <li><a href="{% url 'home' %}" title="Market prices" {% nav_active 'home' 'prices' 'crop_detail' 'crop_family' 'crop_family_compare' 'compare' 'regional_report' 'farmgate_prices' 'wholesale_prices' 'retail_monthly_prices' %}>{% icon 'home' 20 %}<span class="nav-label">Home</span></a></li>
           <li><a href="{% url 'alerts' %}" title="Price Alerts" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 20 %}<span class="nav-label">Price Alerts</span></a></li>
           <li><a href="{% url 'my_crops' %}" title="My Crops" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' 20 %}<span class="nav-label">My Crops</span></a></li>
-          <li><a href="{% url 'profile' %}" title="Profile" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>{% icon 'user' 20 %}<span class="nav-label">Profile</span></a></li>
         </ul>
       </nav>
-      <div class="side-help">
-        {% icon 'sprout' 24 %}
-        <strong>Need help?</strong>
-        <p>We're here for you.</p>
-        <a class="btn btn-primary btn-small btn-block" href="{% url 'help' %}">Contact Us</a>
+      <div class="side-account" aria-label="Account and settings">
+        <a class="side-link" href="{% url 'help' %}" title="Help &amp; Support" {% nav_active 'help' %}>{% icon 'help' 20 %}<span class="nav-label">Help &amp; Support</span></a>
+        <button class="side-link theme-toggle" type="button" data-theme-toggle aria-pressed="false" title="Switch light or dark mode">
+          <span class="theme-icon theme-icon-moon">{% icon 'moon' 20 %}</span>
+          <span class="theme-icon theme-icon-sun">{% icon 'sun' 20 %}</span>
+          <span class="nav-label" aria-hidden="true"><span class="show-in-light">Dark mode</span><span class="show-in-dark">Light mode</span></span>
+          <span class="sr-only" data-theme-label>Switch to dark mode</span>
+        </button>
+        {% if current_user %}
+          <a class="side-link" href="{% url 'notifications' %}" title="Notifications" {% nav_active 'notifications' %}>
+            <span class="side-icon">{% icon 'bell' 20 %}{% if unread_count %}<span class="dot" aria-hidden="true"></span>{% endif %}</span>
+            <span class="nav-label">Notifications</span>
+            {% if unread_count %}<span class="side-badge">{{ unread_count }}<span class="sr-only"> new</span></span>{% endif %}
+          </a>
+          <a class="side-link side-profile" href="{% url 'profile' %}" title="Profile" {% nav_active 'profile' 'profile_edit' 'notification_settings' %}>
+            <span class="avatar" aria-hidden="true">{{ current_user.first_name|first|upper }}</span>
+            <span class="nav-label side-profile-text"><strong>{{ current_user.name }}</strong><small>View profile</small></span>
+          </a>
+        {% else %}
+          <a class="btn btn-primary btn-block side-login" href="{% url 'login' %}" title="Log in">{% icon 'user' 18 %}<span class="nav-label">Log in</span></a>
+        {% endif %}
       </div>
-      <a class="side-help-mini" href="{% url 'help' %}" title="Help &amp; Support">{% icon 'help' 20 %}<span class="sr-only">Help &amp; Support</span></a>
     </aside>
     <div class="drawer-overlay" data-sidebar-close hidden></div>
 
@@ -52,24 +62,6 @@
               {% icon 'menu' 24 %}<span class="sr-only">Open menu</span>
             </button>
             <a class="brand" href="{% url 'home' %}" aria-label="Ani home">{% include "core/partials/logo.html" with w=65 h=34 alt="" %}</a>
-          </div>
-          <div class="topbar-actions">
-            {% include "core/partials/theme_toggle.html" %}
-            {% if current_user %}
-              <a class="icon-btn" href="{% url 'alerts' %}">
-                {% icon 'bell' 22 %}
-                <span class="sr-only">Price alerts{% if unread_count %}, {{ unread_count }} new{% endif %}</span>
-                {% if unread_count %}<span class="dot" aria-hidden="true"></span>{% endif %}
-              </a>
-              <a class="icon-btn user-chip" href="{% url 'profile' %}">
-                <span class="avatar" aria-hidden="true">{{ current_user.first_name|first|upper }}</span>
-                <span class="user-chip-name">{{ current_user.name }}</span>
-                {% icon 'chevron-down' 16 %}
-                <span class="sr-only">Your profile</span>
-              </a>
-            {% else %}
-              <a class="btn btn-secondary btn-small" href="{% url 'login' %}">Log in</a>
-            {% endif %}
           </div>
         </div>
         <div class="page-title">{% block header %}{% endblock %}</div>
@@ -105,14 +97,14 @@
 
   <nav class="bottom-nav" aria-label="Main menu (shortcuts)">
     <ul>
-      <li><a href="{% url 'home' %}" {% nav_active 'home' %}>{% icon 'home' 24 %}<span>Home</span></a></li>
-      <li><a href="{% url 'prices' %}" {% nav_active 'prices' 'crop_detail' 'crop_family' 'farmgate_prices' %}>{% icon 'store' 24 %}<span>Markets</span></a></li>
-      <li><a href="{% url 'compare' %}" {% nav_active 'compare' 'buyer_offers' %}>{% icon 'compare' 24 %}<span>Compare</span></a></li>
+      <li><a href="{% url 'home' %}" {% nav_active 'home' 'prices' 'crop_detail' 'crop_family' 'crop_family_compare' 'compare' 'regional_report' 'farmgate_prices' 'wholesale_prices' 'retail_monthly_prices' %}>{% icon 'home' 24 %}<span>Home</span></a></li>
       <li><a href="{% url 'alerts' %}" {% nav_active 'alerts' 'alert_new' %}>{% icon 'bell' 24 %}<span>Alerts</span></a></li>
-      <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' 'my_crops' 'my_crops_add' 'help' %}>{% icon 'user' 24 %}<span>Profile</span></a></li>
+      <li><a href="{% url 'my_crops' %}" {% nav_active 'my_crops' 'my_crops_add' %}>{% icon 'sprout' 24 %}<span>My Crops</span></a></li>
+      <li><a href="{% url 'profile' %}" {% nav_active 'profile' 'profile_edit' 'notification_settings' 'help' %}>{% icon 'user' 24 %}<span>Profile</span></a></li>
     </ul>
   </nav>
 
+  {% if current_user %}{% include "core/partials/alert_dialog.html" %}{% endif %}
   <script src="{% static 'core/js/app.js' %}?v={{ asset_version }}" defer></script>
   {% block scripts %}{% endblock %}
 </body>

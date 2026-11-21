@@ -1,0 +1,15 @@
+{% load ani_tags %}<article class="card cf-psa mp-{{ line.kind }}">
+  <header class="cf-psa-head">
+    <h3><span class="cp-swatch cp-swatch-{{ line.kind }}" aria-hidden="true"></span>{{ line.label }}</h3>
+    {% if line.day %}<span class="cp-date"><span class="fresh fresh-{{ line.fresh }}" aria-hidden="true"></span>{{ line.day|date:"M Y" }}</span>{% endif %}
+  </header>
+  <p class="cf-note">{{ line.meaning }}</p>
+  {% if line.value is not None %}
+  <p class="cf-value">{{ line.value|peso }}<span class="unit">/kg</span></p>
+  <p class="cf-psa-product" title="{{ line.source_note }}">{{ line.source_note }}</p>
+  {% if line.national %}<p class="cf-caveat">Whole-country figure; none for this region</p>{% elif line.kind == "farmgate" and stand_in %}<p class="cf-caveat">Palay price, before milling</p>{% endif %}
+  {% else %}
+  <p class="cf-value muted" aria-label="No price">—</p>
+  <p class="cf-psa-product">Not published by the PSA for this crop{% if region %} in this region{% endif %}.</p>
+  {% endif %}
+</article>

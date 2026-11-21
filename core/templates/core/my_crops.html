@@ -1,44 +1,129 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}My Crops{% endblock %}
-{% block header %}{% url 'profile' as back_url %}{% include "core/partials/page_title.html" with title="My Crops" lead="The crops you check often, with their latest price." back=back_url back_label="Back to Profile" %}{% endblock %}
+{% block header %}<a class="title-back is-boxed" href="{% url 'home' %}" aria-label="Back to Home">{% icon 'arrow-left' 20 %}</a>
+<div class="cf-title"><h1>My Crops</h1><p class="lead">The crops you check often, with their latest price</p></div>
+<div class="page-actions"><a class="btn btn-primary" href="#add" data-dialog-open="add-dialog">{% icon 'plus' 18 %}Add crop</a></div>{% endblock %}
 {% block content %}
-<div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-  <a class="btn btn-primary" href="{% url 'my_crops_add' %}">{% icon 'plus' 18 %} Add Crop</a>
+<div class="status-bar">
+  <span><strong>{{ items|length }}</strong> crop{{ items|length|pluralize }} tracked</span>
+  {% if items %}
+  <span class="status-sep" aria-hidden="true"></span>
+  <span><span class="fresh fresh-new" aria-hidden="true"></span><strong>{{ with_price }}</strong> with a recent price</span>
+  {% if waiting_count %}<span><span class="fresh fresh-old" aria-hidden="true"></span><strong>{{ waiting_count }}</strong> waiting for a report</span>{% endif %}
+  {% endif %}
+  {% if region_label %}<span class="status-end">{% icon 'pin' 16 %}{{ region_label }}</span>{% endif %}
 </div>
 
-{% if items %}
-  <ul class="crop-cards">
-    {% for item in items %}{% with crop=item.saved.crop s=item.summary %}
-      <li>
-        <div class="crop-card">
-          <div class="cc-head">
-            <span class="crop-icon" aria-hidden="true">{{ crop.icon }}</span>
-            <div><h2>{{ crop.name }}</h2><span class="muted">{{ crop.english_name }}</span></div>
-          </div>
-          {% if s %}
-            <p class="price-big" style="font-size:1.625rem">{{ s.headline.display_price }}<span class="unit">/{{ crop.unit }}</span></p>
-            <p class="source-line">{% icon 'shield' 18 %} Source: {{ s.headline.source }} · {{ s.headline.market.location }}</p>
-            <p class="cc-meta">{% include "core/partials/change.html" with row=s.headline %}<span class="muted">{{ s.headline.date|updated_label }}</span></p>
-          {% else %}
-            <p class="muted" style="margin-top:12px">No recent price in your area yet.</p>
-          {% endif %}
-          <div class="cc-actions">
-            <a class="btn btn-soft btn-small" href="{% url 'crop_detail' crop.slug %}">{% icon 'trend' 20 %} View Price</a>
-            <form method="post" action="{% url 'my_crops_remove' crop.slug %}" data-confirm="Remove {{ crop.name }} from My Crops?">{% csrf_token %}
-              <button class="btn btn-text btn-danger" type="submit">{% icon 'trash' 20 %} Remove</button>
-            </form>
-          </div>
+<ul class="mc-grid">
+  {% for item in items %}
+  <li class="mc-card{% if not item.summary %} is-waiting{% endif %}">
+    <header class="mc-head">
+      <span class="mc-icon" aria-hidden="true">{% icon 'sprout' 20 %}</span>
+      <div class="mc-name">
+        <h2>{{ item.title }}</h2>
+        {% if item.tags %}<div class="mc-tags">{% for tag in item.tags %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
+      </div>
+      <details class="kebab">
+        <summary aria-label="More for {{ item.title }}">{% icon 'more' 20 %}</summary>
+        <div class="kebab-menu">
+          {% if item.detail_link %}<a href="{{ item.detail_link }}">{% icon 'trend' 16 %}View details</a>{% endif %}
+          {% include "core/partials/alert_button.html" with crop_slug=item.crop.slug crop_name=item.title low=item.low high=item.high style="kebab-item" label="Set alert" %}
+          <form method="post" action="{% url 'my_crops_remove' item.crop.slug %}" data-confirm="Remove {{ item.title }} from My Crops?">{% csrf_token %}
+            <button class="is-danger" type="submit">{% icon 'trash' 16 %}Remove from My Crops</button>
+          </form>
         </div>
-      </li>
-    {% endwith %}{% endfor %}
-  </ul>
-{% else %}
-  <div class="card empty-state">
-    <span class="empty-emoji" aria-hidden="true">🌱</span>
-    <h2>You have not saved any crops yet</h2>
-    <p>Save the crops you grow, and their prices will be on your Home page.</p>
-    <a class="btn btn-primary" href="{% url 'my_crops_add' %}">{% icon 'plus' 22 %} Add Crop</a>
-  </div>
-{% endif %}
+      </details>
+    </header>
+    {% if item.summary %}{% with head=item.summary.headline %}
+    <div class="mc-body">
+      <p class="mc-label">{% if item.ranged %}Retail price range{% else %}Retail price{% endif %}</p>
+      <p class="mc-price">{{ head.display_price }}<span class="unit">/{{ item.crop.unit }}</span></p>
+      <div class="mc-chips">
+        <span class="mc-chip"><span class="fresh fresh-{{ item.fresh }}" aria-hidden="true"></span>{{ head.date|updated_label }}</span>
+        <span class="mc-chip">{% include "core/partials/change.html" with row=head %}</span>
+      </div>
+    </div>
+    <p class="mc-source">{% icon 'shield' 16 %}{{ item.where }}</p>
+    <div class="mc-actions">
+      <a class="btn btn-primary btn-small" href="{{ item.detail_link }}">{% icon 'trend' 16 %}View details</a>
+      {% include "core/partials/alert_button.html" with crop_slug=item.crop.slug crop_name=item.title low=item.low high=item.high style="btn-secondary" label="Set alert" %}
+    </div>
+    {% endwith %}{% else %}
+    <div class="mc-empty">
+      <span class="mc-empty-icon" aria-hidden="true">{% icon 'clock' 18 %}</span>
+      <div>
+        <strong>No recent price{% if region_short %} in {{ region_short }}{% endif %}</strong>
+        <p>None of our sources has reported this crop in your region lately. We’ll show it here as soon as one does.</p>
+      </div>
+    </div>
+    {% if item.other_regions_link %}<a class="mc-link" href="{{ item.other_regions_link }}">See prices in other regions ›</a>{% endif %}
+    <div class="mc-actions">
+      {% if item.crop.id in report_alerts %}
+      <span class="btn btn-soft btn-small mc-wide is-static">{% icon 'check' 16 %}We’ll notify you when it’s reported</span>
+      {% else %}
+      <form class="mc-wide" method="post" action="{% url 'alert_new' %}">{% csrf_token %}
+        <input type="hidden" name="crop" value="{{ item.crop.slug }}"><input type="hidden" name="condition" value="above">
+        <input type="hidden" name="target_price" value="{{ report_target }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="btn btn-primary btn-small" type="submit">{% icon 'bell' 16 %}Notify me when reported</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+  <li class="mc-card mc-add">
+    <a href="#add" data-dialog-open="add-dialog">
+      <span class="mc-add-icon" aria-hidden="true">{% icon 'plus' 22 %}</span>
+      <strong>{% if items %}Add another crop{% else %}Add your first crop{% endif %}</strong>
+      <span class="muted">Track what you grow or sell and see its price here</span>
+    </a>
+  </li>
+</ul>
+
+<dialog class="ani-dialog is-wide" id="add-dialog" aria-labelledby="add-dialog-title">
+  <form method="post" action="{% url 'my_crops_add' %}" data-add-form>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{% url 'my_crops' %}">
+    <header class="dlg-head">
+      <div>
+        <h2 id="add-dialog-title">Add crops</h2>
+        <p class="card-sub">Pick one or more varieties to track in My Crops</p>
+      </div>
+      <button class="dlg-close" type="button" data-dialog-close aria-label="Close">{% icon 'close' 20 %}</button>
+    </header>
+    <div class="dlg-tools">
+      <label class="dlg-search">{% icon 'search' 18 %}<span class="sr-only">Search crops</span>
+        <input type="search" placeholder="Search, e.g. ampalaya, rice, cabbage" autocomplete="off" data-add-search></label>
+      <div class="chip-row" role="group" aria-label="Crop type">
+        <button type="button" class="filter-chip" aria-pressed="true" data-add-category="">All</button>
+        {% for category in add_categories %}<button type="button" class="filter-chip" aria-pressed="false" data-add-category="{{ category }}">{{ category }}</button>{% endfor %}
+      </div>
+    </div>
+    <div class="dlg-body add-groups">
+      {% for group in add_groups %}
+      <div class="add-group" data-category="{{ group.category }}" data-search="{{ group.search }}">
+        <div class="add-group-name">
+          <span class="mc-icon is-small" aria-hidden="true">{% icon 'sprout' 16 %}</span>
+          <div><strong>{{ group.name }}</strong>{% if group.subtitle %}<small>{{ group.subtitle }}</small>{% endif %}</div>
+        </div>
+        <div class="add-chips">
+          {% for choice in group.items %}
+          {% if choice.saved %}<span class="add-chip is-saved" title="Already in My Crops">{% icon 'check' 14 %}{{ choice.label }} <small>added</small></span>
+          {% else %}<label class="add-chip"><input type="checkbox" name="crop" value="{{ choice.crop.slug }}"><span>{% icon 'check' 14 %}{{ choice.label }}</span></label>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      <p class="dlg-none" hidden data-add-none>No crop matches your search.</p>
+    </div>
+    <footer class="dlg-foot">
+      <p class="dlg-status" data-add-count aria-live="polite">No variety selected</p>
+      <div class="dlg-buttons">
+        <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+        <button class="btn btn-primary" type="submit" data-add-submit disabled>Add to My Crops</button>
+      </div>
+    </footer>
+  </form>
+</dialog>
 {% endblock %}

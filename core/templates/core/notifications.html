@@ -1,0 +1,46 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Notifications{% endblock %}
+{% block header %}<a class="title-back is-boxed" href="{% url 'home' %}" aria-label="Back to Home">{% icon 'arrow-left' 20 %}</a>
+<div class="cf-title"><h1>Notifications</h1><p class="lead">Messages from your price alerts</p></div>
+<div class="page-actions">
+  {% if unread %}<form method="post" action="{% url 'notifications' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">{% icon 'check' 18 %}Mark all read</button></form>{% endif %}
+  <a class="btn btn-primary" href="{% url 'alerts' %}">{% icon 'bell' 18 %}Manage alerts</a>
+</div>{% endblock %}
+{% block content %}
+<div class="status-bar">
+  <span><span class="fresh fresh-{% if unread %}new{% else %}old{% endif %}" aria-hidden="true"></span><strong>{{ unread }}</strong> new</span>
+  <span class="status-sep" aria-hidden="true"></span>
+  <span><strong>{{ total }}</strong> message{{ total|pluralize }}</span>
+  <span class="status-sep" aria-hidden="true"></span>
+  <a class="status-link" href="{% url 'alerts' %}">{% icon 'bell' 16 %}{{ alert_count }} alert{{ alert_count|pluralize }} on</a>
+  <a class="status-end status-link" href="{% url 'notification_settings' %}">{% icon 'settings' 16 %}Notification settings</a>
+</div>
+
+{% if groups %}
+{% for label, notes in groups %}
+<section class="pa-section" aria-labelledby="notes-{{ forloop.counter }}">
+  <h2 class="pa-heading" id="notes-{{ forloop.counter }}">{{ label }}</h2>
+  <ul class="nt-list">
+    {% for n in notes %}
+    <li class="nt-row{% if not n.is_read %} is-new{% endif %}">
+      <span class="mc-icon" aria-hidden="true">{% icon 'bell' 18 %}</span>
+      <div class="nt-body">
+        <p class="nt-title"><strong>{{ n.title }}</strong>{% if not n.is_read %} <span class="tag cf-tag-new">New</span>{% endif %}</p>
+        <p class="nt-message">{{ n.message }}</p>
+        <p class="nt-meta">{% icon 'clock' 14 %}{{ n.created_at|date:"M j, g:i A" }}{% if n.push_sent %} · also sent to your phone{% endif %}</p>
+      </div>
+      {% if n.link %}<a class="btn btn-secondary btn-small" href="{{ n.link }}">View details{% icon 'chevron-right' 16 %}</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% else %}
+<div class="pa-empty">
+  <span class="mc-icon" aria-hidden="true">{% icon 'bell' 20 %}</span>
+  <div><strong>No notifications yet</strong><p class="muted">When a price reaches one of your alert targets, the message shows up here{% if alert_count %}{% else %}. Set an alert to get started{% endif %}.</p></div>
+  <a class="btn btn-primary btn-small" href="{% url 'alerts' %}">{% icon 'bell' 16 %}{% if alert_count %}See your alerts{% else %}Set an alert{% endif %}</a>
+</div>
+{% endif %}
+{% endblock %}

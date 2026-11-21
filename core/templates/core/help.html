@@ -8,11 +8,21 @@
   <section class="card">
     <div class="help-card-head"><span class="icon-badge solid">{% icon 'bars' 22 %}</span><h2>How do I check a crop's price?</h2></div>
     <ol class="steps">
-      <li><span>Tap <strong>Market Prices</strong></span></li>
-      <li><span>Choose your crop</span></li>
-      <li><span>Select your location</span></li>
+      <li><span>Tap <strong>Home</strong> to open Market prices</span></li>
+      <li><span>Type your crop, or choose your <strong>Region</strong></span></li>
+      <li><span>Read the crop card: retail, wholesale and farmgate prices side by side</span></li>
     </ol>
-    <a class="btn btn-soft btn-small" href="{% url 'prices' %}">{% icon 'wheat' 20 %} Go to Market Prices</a>
+    <a class="btn btn-soft btn-small" href="{% url 'home' %}">{% icon 'home' 20 %} Go to Market prices</a>
+  </section>
+
+  <section class="card">
+    <div class="help-card-head"><span class="icon-badge solid">{% icon 'info' 22 %}</span><h2>What do retail, wholesale and farmgate mean?</h2></div>
+    <ul class="help-terms">
+      <li><strong>Retail</strong>: what shoppers pay at markets. These are the newest reports, updated as markets publish them.</li>
+      <li><strong>Wholesale</strong>: what traders charge when selling in bulk. A PSA monthly average.</li>
+      <li><strong>Farmgate</strong>: what farmers are paid for their harvest. A PSA monthly average.</li>
+    </ul>
+    <p class="muted" style="margin:0">PSA averages are published about two months after the month they cover. The difference between farmgate and retail shows how much prices rise from farm to market.</p>
   </section>
 
   <section class="card">

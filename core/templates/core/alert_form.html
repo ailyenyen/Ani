@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
 {% block title %}Add Price Alert{% endblock %}
-{% block header %}{% url 'alerts' as back_url %}{% include "core/partials/page_title.html" with title="Add Price Alert" lead="Answer 3 quick questions. We will message you when the price is reached." back=back_url back_label="Back to Price Alerts" %}{% endblock %}
+{% block header %}{% url 'alerts' as back_url %}{% include "core/partials/page_title.html" with title="Add Price Alert" lead="Choose a crop, a price, and when to tell you. We will message you when the price is reached." back=back_url back_label="Back to Price Alerts" %}{% endblock %}
 {% block content %}
 
 <form method="post" novalidate>
@@ -15,22 +15,12 @@
   <fieldset class="card step">
     <legend><span class="step-num">1</span> What crop do you want to monitor?</legend>
     {% for error in form.crop.errors %}<p class="error" style="margin-bottom:12px">{% icon 'info' 18 %} {{ error }}</p>{% endfor %}
-    <div class="crop-choice-grid">
-      {% for opt in crop_options %}
-        <label class="crop-choice">
-          <input type="radio" name="crop" value="{{ opt.crop.slug }}"
-            data-name="{{ opt.crop.name }}" data-price="{% if opt.current %}{{ opt.current.headline.price }}{% endif %}"
-            {% if form.crop.value == opt.crop.slug %}checked{% endif %}>
-          <span class="choice-box">
-            <span class="crop-icon" aria-hidden="true">{{ opt.crop.icon }}</span>
-            <span class="choice-text">
-              <span>{{ opt.crop.name }}</span>
-              {% if opt.current %}<span class="muted">Now {{ opt.current.headline.display_price }}</span>{% endif %}
-            </span>
-          </span>
-        </label>
+    <label class="sr-only" for="crop-pick">Search for a crop</label>
+    <select id="crop-pick" name="crop" data-combobox data-placeholder="Search crops, e.g. tomato, kamatis, rice" data-icon='{% icon "search" 18 %}' required>
+      <option value="">Choose a crop</option>
+      {% for opt in crop_options %}<option value="{{ opt.crop.slug }}" data-price="{% if opt.current %}{{ opt.current.headline.price }}{% endif %}" data-search="{{ opt.crop.english_name|default:'' }}"{% if form.crop.value == opt.crop.slug %} selected{% endif %}>{{ opt.crop.name }}</option>
       {% endfor %}
-    </div>
+    </select>
   </fieldset>
 
   <fieldset class="card step">

@@ -1,0 +1,67 @@
+{% load ani_tags %}<dialog class="ani-dialog" id="alert-dialog" aria-labelledby="alert-dialog-title">
+  <form method="post" action="{% url 'alert_new' %}" data-alert-form>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <header class="dlg-head">
+      <div>
+        <h2 id="alert-dialog-title">New price alert</h2>
+        <p class="card-sub">We’ll message you when the price is reached</p>
+      </div>
+      <button class="dlg-close" type="button" data-dialog-close aria-label="Close">{% icon 'close' 20 %}</button>
+    </header>
+    <div class="dlg-body">
+      <section class="dlg-step" aria-labelledby="alert-step-crop">
+        <h3 id="alert-step-crop"><span class="step-num">1</span>Crop</h3>
+        {% if alert_choices %}
+        <label class="dlg-search">{% icon 'search' 18 %}<span class="sr-only">Search crops</span>
+          <input type="search" placeholder="Search crops, e.g. kamatis, rice" autocomplete="off" data-alert-search></label>
+        <div class="alert-choices" role="radiogroup" aria-labelledby="alert-step-crop">
+          {% for c in alert_choices %}
+          <label class="alert-choice" data-search="{{ c.title|lower }} {{ c.family|lower }} {{ c.label|lower }} {{ c.crop.name|lower }}">
+            <input type="radio" name="crop" value="{{ c.crop.slug }}" data-name="{{ c.title }}" data-low="{{ c.low|default_if_none:'' }}" data-high="{{ c.high|default_if_none:'' }}" required>
+            <span class="alert-choice-text">
+              <strong>{{ c.title }}{% if c.label and c.label != c.title %}<span class="alert-choice-variety"> · {{ c.label }}</span>{% endif %}{% if c.saved %} <span class="tag cf-tag-new">My crop</span>{% endif %}</strong>
+              <small>{{ c.note }}</small>
+            </span>
+            <span class="alert-choice-price{% if not c.summary %} muted{% endif %}">{% if c.summary %}{{ c.summary.headline.display_price }}{% else %}No price{% endif %}</span>
+          </label>
+          {% endfor %}
+          <p class="dlg-none" hidden data-alert-none>No crop matches your search.</p>
+        </div>
+        {% else %}
+        <input type="hidden" name="crop" data-alert-crop>
+        <div class="alert-choice is-fixed">
+          <span class="alert-choice-text"><strong data-alert-name></strong><small data-alert-note></small></span>
+          <span class="alert-choice-price" data-alert-price></span>
+        </div>
+        {% endif %}
+      </section>
+      <fieldset class="dlg-step">
+        <legend><h3><span class="step-num">2</span>Notify me when the price…</h3></legend>
+        <div class="dlg-when">
+          <label class="when-card"><input type="radio" name="condition" value="above" checked><span><strong><span class="when-up" aria-hidden="true">▲</span> Rises above</strong><small>For when you’re waiting to sell</small></span></label>
+          <label class="when-card"><input type="radio" name="condition" value="below"><span><strong><span class="when-down" aria-hidden="true">▼</span> Drops below</strong><small>For buying, or watching for a drop</small></span></label>
+        </div>
+      </fieldset>
+      <section class="dlg-step" aria-labelledby="alert-step-price">
+        <h3 id="alert-step-price"><span class="step-num">3</span><label for="alert-target">Target price</label></h3>
+        <div class="dlg-price-row">
+          <div class="price-input">
+            <span class="prefix" aria-hidden="true">₱</span>
+            <input id="alert-target" type="text" inputmode="decimal" name="target_price" autocomplete="off" placeholder="0.00"
+              required pattern="[0-9]+([.][0-9]{1,2})?" title="A price like 40 or 22.50">
+            <span class="suffix">/kg</span>
+          </div>
+          <div class="dlg-chips" data-alert-chips></div>
+        </div>
+      </section>
+    </div>
+    <footer class="dlg-foot">
+      <p class="dlg-status" data-alert-status aria-live="polite">Choose a crop and a target price to create the alert.</p>
+      <div class="dlg-buttons">
+        <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+        <button class="btn btn-primary" type="submit" data-alert-submit disabled>{% icon 'bell' 18 %}Create alert</button>
+      </div>
+    </footer>
+  </form>
+</dialog>

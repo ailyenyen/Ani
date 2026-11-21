@@ -17,7 +17,10 @@
       deep: v("--deep"),
       tooltipBg: v("--tooltip-bg"),
       tooltipFg: v("--tooltip-fg"),
-      surface: v("--surface")
+      surface: v("--surface"),
+      kinds: { retail: v("--c-retail"), wholesale: v("--c-wholesale"), farmgate: v("--c-farmgate") },
+      hatch: v("--chart-hatch"),
+      muted: v("--chart-tick")
     };
   }
 
@@ -131,7 +134,7 @@
           label: "Price per kg",
           data: data.values,
           backgroundColor: data.colors || data.values.map(function () { return t.line; }),
-          borderColor: (data.colors || []).map(function (c) { return c === "#D3EBD3" ? "#9CC9A3" : c; }),
+          borderColor: (data.colors || []).map(function (c) { return c === "#B9BB9C" ? "#9B9D7D" : c; }),
           borderWidth: 1,
           borderRadius: { topLeft: 8, topRight: 8 },
           borderSkipped: "bottom",
@@ -261,6 +264,172 @@
     });
   }
 
+  // Home banner: one line per price type (retail, wholesale, farmgate) over the months.
+  function multiChart(canvas, data, t) {
+    var all = [];
+    data.datasets.forEach(function (d) { d.values.forEach(function (v) { if (v !== null) all.push(v); }); });
+    var min = Math.min.apply(null, all), max = Math.max.apply(null, all);
+    var pad = Math.max((max - min) * 0.12, 1);
+    return new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: data.labels,
+        datasets: data.datasets.map(function (d) {
+          var colour = t.kinds[d.kind] || t.line;
+          return {
+            label: d.label, data: d.values, borderColor: colour, backgroundColor: colour,
+            pointBackgroundColor: colour, pointBorderColor: t.surface, pointBorderWidth: 1.5,
+            borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 6, tension: 0.3, spanGaps: true, fill: false
+          };
+        })
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: animation(),
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: tooltip(t, {
+            label: function (ctx) { return ctx.dataset.label + ": " + (ctx.parsed.y === null ? "no report" : peso(ctx.parsed.y) + "/kg"); }
+          })
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: t.tick, maxTicksLimit: 9, maxRotation: 0 } },
+          y: {
+            suggestedMin: Math.max(0, min - pad), suggestedMax: max + pad,
+            grid: { color: t.grid }, border: { display: false },
+            ticks: { color: t.tick, maxTicksLimit: 6, callback: function (v) { return "₱" + v; } }
+          }
+        }
+      }
+    });
+  }
+
+  // Home trend: PSA monthly lines (solid / dashed / dotted), a hatched "not published yet" zone,
+  // and hollow markers with the newest report for each price type.
+  var DASHES = { retail: [], wholesale: [7, 5], farmgate: [2, 4] };
+
+  function hatchPattern(ctx, colour) {
+    var tile = document.createElement("canvas");
+    tile.width = tile.height = 8;
+    var g = tile.getContext("2d");
+    g.strokeStyle = colour;
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(0, 8); g.lineTo(8, 0);
+    g.stroke();
+    return ctx.createPattern(tile, "repeat");
+  }
+
+  var trendExtras = {
+    id: "aniTrendExtras",
+    beforeDatasetsDraw: function (chart, _args, options) {
+      var data = options.data, t = options.theme;
+      if (data.publishedUntil === undefined || data.publishedUntil >= data.labels.length - 1) return;
+      var x = chart.scales.x, area = chart.chartArea, ctx = chart.ctx;
+      var start = x.getPixelForValue(data.publishedUntil);
+      ctx.save();
+      ctx.fillStyle = hatchPattern(ctx, t.hatch);
+      ctx.fillRect(start, area.top, area.right - start, area.bottom - area.top);
+      ctx.fillStyle = t.muted;
+      ctx.font = "500 12px Poppins, system-ui, sans-serif";
+      // Centre the label in the zone when it fits; otherwise anchor it to the right edge so it is never cut off.
+      var width = ctx.measureText(data.pendingLabel).width;
+      if (area.right - start > width + 16) {
+        ctx.textAlign = "center";
+        ctx.fillText(data.pendingLabel, (start + area.right) / 2, area.top + 14);
+      } else {
+        ctx.textAlign = "right";
+        ctx.fillText(data.pendingLabel, area.right - 4, area.top + 14);
+      }
+      ctx.restore();
+    },
+    afterDatasetsDraw: function (chart, _args, options) {
+      var data = options.data, t = options.theme, ctx = chart.ctx;
+      ctx.save();
+      ctx.font = "600 11.5px Poppins, system-ui, sans-serif";
+      ctx.textAlign = "left";
+      var area = chart.chartArea, placed = [];
+      var overlaps = function (box) {
+        return placed.some(function (o) { return box.x < o.x + o.w && o.x < box.x + box.w && box.y < o.y + o.h && o.y < box.y + box.h; });
+      };
+      // Each label goes beside its point: to the right when there is room (the last point gets
+      // a two-line label in the right padding), otherwise above or below, never over another label.
+      // The newest point (at the right edge) is placed first so it keeps its spot beside the line end.
+      (data.markers || []).slice().sort(function (a, b) { return b.index - a.index; }).forEach(function (marker) {
+        var px = chart.scales.x.getPixelForValue(marker.index), py = chart.scales.y.getPixelForValue(marker.value);
+        var cut = marker.text.indexOf(" "), price = marker.text.slice(0, cut), when = marker.text.slice(cut + 1);
+        var wide = ctx.measureText(marker.text).width, tall = 14;
+        var stacked = Math.max(ctx.measureText(price).width, ctx.measureText(when).width);
+        var options = [];
+        if (marker.index === data.labels.length - 1 && px + 8 + stacked <= chart.width) options.push({ x: px + 8, y: py - 14, w: stacked, h: 28, lines: [price, when] });
+        options.push({ x: px - wide / 2, y: py + 10, w: wide, h: tall, lines: [marker.text] });
+        options.push({ x: px - wide / 2, y: py - 10 - tall, w: wide, h: tall, lines: [marker.text] });
+        options.push({ x: px - 10 - wide, y: py - tall / 2, w: wide, h: tall, lines: [marker.text] });
+        options.forEach(function (o) { o.x = Math.max(area.left, Math.min(o.x, chart.width - 2 - o.w)); });
+        var box = options.filter(function (o) { return !overlaps(o); })[0] || options[1];
+        placed.push(box);
+        box.lines.forEach(function (line, i) {
+          ctx.fillStyle = i === 0 ? t.text : t.muted;
+          ctx.font = i === 0 ? "600 11.5px Poppins, system-ui, sans-serif" : "500 11px Poppins, system-ui, sans-serif";
+          ctx.fillText(line, box.x, box.y + 11 + i * 14);
+        });
+      });
+      ctx.restore();
+    }
+  };
+
+  function trendOverview(canvas, data, t) {
+    var all = [];
+    data.datasets.forEach(function (d) { d.values.forEach(function (v) { if (v !== null) all.push(v); }); });
+    (data.markers || []).forEach(function (m) { all.push(m.value); });
+    var min = Math.min.apply(null, all), max = Math.max.apply(null, all);
+    var pad = Math.max((max - min) * 0.15, 2);
+    var datasets = data.datasets.map(function (d) {
+      var colour = t.kinds[d.kind] || t.line;
+      return {
+        label: d.label, data: d.values, borderColor: colour, backgroundColor: colour, borderDash: DASHES[d.kind] || [],
+        borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointBackgroundColor: colour, tension: 0.3, spanGaps: true, fill: false
+      };
+    });
+    (data.markers || []).forEach(function (m) {
+      var values = data.labels.map(function (_l, i) { return i === m.index ? m.value : null; });
+      datasets.push({
+        label: m.label + " (newest report)", data: values, showLine: false, borderColor: t.kinds[m.kind] || t.line,
+        backgroundColor: t.surface, pointRadius: 6, pointHoverRadius: 7, pointBorderWidth: 2.5, pointStyle: "circle"
+      });
+    });
+    return new Chart(canvas, {
+      type: "line",
+      data: { labels: data.labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: animation(),
+        layout: { padding: { right: 64, top: 6 } },
+        interaction: { mode: "nearest", axis: "x", intersect: false },
+        plugins: {
+          legend: { display: false },
+          aniTrendExtras: { data: data, theme: t },
+          tooltip: tooltip(t, {
+            label: function (ctx) { return ctx.parsed.y === null ? null : ctx.dataset.label + ": " + peso(ctx.parsed.y) + "/kg"; }
+          })
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: t.tick, maxTicksLimit: 8, maxRotation: 0,
+            callback: function (value) { var label = this.getLabelForValue(value); return label.indexOf("Jan") === 0 || value === 0 ? label : label.split(" ")[0]; } } },
+          y: {
+            suggestedMin: Math.max(0, min - pad), suggestedMax: max + pad,
+            grid: { color: t.grid }, border: { display: false },
+            ticks: { color: t.tick, maxTicksLimit: 6, callback: function (v) { return "₱" + v; } }
+          }
+        }
+      },
+      plugins: [trendExtras]
+    });
+  }
+
   var charts = [];
 
   function drawAll() {
@@ -272,7 +441,13 @@
       if (!data) return;
       var type = canvas.getAttribute("data-chart");
       var chart;
-      if (type === "market-trend") {
+      if (type === "trend-overview") {
+        if (!data.datasets || !data.datasets.length) return;
+        chart = trendOverview(canvas, data, t);
+      } else if (type === "multi") {
+        if (!data.datasets || !data.datasets.length) return;
+        chart = multiChart(canvas, data, t);
+      } else if (type === "market-trend") {
         chart = marketTrend(canvas, data, t);
       } else if (type === "regional") {
         var selector = document.getElementById(canvas.getAttribute("data-selector"));

@@ -78,7 +78,10 @@ def fetch(session, url, data=None):
 
 
 def discover_regions(session):
-    soup = BeautifulSoup(fetch(session, PORTAL + "tbl_rice.php"), "html.parser")
+    page = fetch(session, PORTAL + "tbl_rice.php")
+    if re.search(rb"connection failed|server has gone away", page[:2000], re.I):
+        raise ScraperError("Bantay Presyo portal is down (its database is not responding); prior data kept, retry later.")
+    soup = BeautifulSoup(page, "html.parser")
     options = soup.select("select#region option[value]")
     regions = [(o["value"], clean(o.get_text())) for o in options if re.fullmatch(r"\d{9}", o["value"])]
     if not regions:

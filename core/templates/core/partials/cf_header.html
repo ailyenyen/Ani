@@ -1,0 +1,18 @@
+{% load ani_tags %}<a class="title-back" href="{{ back }}" aria-label="{{ back_label }}">{% icon 'arrow-left' 22 %}</a><div class="cf-title">{% if eyebrow %}<p class="eyebrow cf-eyebrow">{{ eyebrow }}</p>{% endif %}<h1>{{ title }}</h1></div>
+<div class="cf-head-tools">
+  <form class="cf-head-filters" method="get" action="{{ action }}">
+    {% for key, values in keep.items %}{% if key != "variety" and key != "market" %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+    <label class="cp-region cf-pick"><span>Region</span>
+      <select name="region" data-autosubmit>
+        <option value=""{% if not region %} selected{% endif %}>All of the Philippines</option>
+        {% for key, name, _words in regions %}<option value="{{ key }}"{% if key == region %} selected{% endif %}>{{ name }}</option>{% endfor %}
+      </select>
+    </label>
+    {% if form.variety.field.choices|length > 2 %}<label class="cp-region cf-pick"><span>Variety</span>{{ form.variety }}</label>{% endif %}
+    <button class="btn btn-secondary btn-small js-hide" type="submit">Show</button>
+  </form>
+  <div class="cf-head-actions">
+    {% include "core/partials/my_crop_button.html" with saved=saved crop_slug=crop_slug %}
+    {% include "core/partials/alert_button.html" with crop_slug=crop_slug crop_name=family.name price=retail.average price_label="Retail average now" %}
+  </div>
+</div>

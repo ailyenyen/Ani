@@ -3,7 +3,6 @@
 {% block title %}Compare Markets{% endblock %}
 {% block header %}{% url 'home' as home_url %}{% include "core/partials/page_title.html" with title="Compare Markets" lead="See where your crop is priced highest." back=home_url back_label="Back to Home" %}{% endblock %}
 {% block content %}
-<div class="offer-entry"><a class="btn btn-soft btn-small" href="{% url 'buyer_offers' %}">Compare Buyer Offers</a></div>
 {% if live_reports %}<p class="card"><a class="btn btn-primary" href="{% url 'compare' %}">Regional report · lowest prices &amp; source comparison</a><br>This page compares weekly report series. Open the Compare Markets to filter individual market prices across regions and find the lowest reported prices.</p>{% endif %}
 <form class="filter-bar" method="get" action="{% url 'compare' %}" style="margin-bottom:16px">
   <label class="sr-only" for="c-crop">Crop</label>
@@ -46,7 +45,7 @@
   </section>
 
   <section class="card flush" aria-labelledby="list-title">
-    <div class="card-head" style="margin-bottom:0"><h2 id="list-title">Market Prices</h2></div>
+    <div class="card-head" style="margin-bottom:0"><h2 id="list-title">Retail prices by market</h2></div>
     <table class="data-table">
       <thead><tr><th scope="col">Market</th><th scope="col">Price (₱/kg)</th><th scope="col">Change</th></tr></thead>
       <tbody>

@@ -20,8 +20,10 @@ FAMILIES = (
     CropFamily("palay", "Palay / Unmilled Rice", ("palay", "unmilled rice", "rough rice", "paddy rice")),
     CropFamily("rice", "Rice / Bigas", ("rice", "bigas", "commercial (local)", "commercial (imported)", "nfa")),
     CropFamily("sweet-potato", "Sweet Potato / Kamote", ("sweet potato", "kamote", "camote")),
-    CropFamily("spring-onion", "Spring Onion", ("spring onion", "green onion", "scallion")),
-    CropFamily("bell-pepper", "Bell Pepper", ("bell pepper",)),
+    CropFamily("spring-onion", "Spring Onion", ("spring onion", "green onion", "scallion", "onion leaves")),
+    CropFamily("leeks", "Leeks", ("leeks", "leek", "onion leeks")),
+    CropFamily("bell-pepper", "Bell Pepper", ("bell pepper", "pepper bell")),
+    CropFamily("finger-pepper", "Finger Chili / Siling Haba", ("finger pepper", "pepper finger", "finger chili", "siling haba", "siling pangsigang")),
     CropFamily("black-pepper", "Black Pepper", ("black pepper",)),
     CropFamily("tomato", "Tomato / Kamatis", ("tomato", "tomatoes", "kamatis")),
     CropFamily("eggplant", "Eggplant / Talong", ("eggplant", "talong")),
@@ -56,8 +58,20 @@ FAMILIES = (
     CropFamily("taro", "Taro / Gabi", ("taro", "gabi")),
     CropFamily("coconut", "Coconut / Niyog", ("coconut", "niyog")),
     CropFamily("coffee", "Coffee / Kape", ("coffee", "kape")),
+    CropFamily("peanut", "Peanut / Mani", ("peanut", "peanuts", "mani")),
+    CropFamily("soursop", "Soursop / Guyabano", ("soursop", "guyabano", "guayabano")),
+    CropFamily("santol", "Santol", ("santol",)),
+    CropFamily("star-apple", "Star Apple / Kaimito", ("star apple", "starapple", "kaimito", "caimito")),
+    CropFamily("honeydew", "Honeydew Melon", ("honeydew", "honey dew")),
+    CropFamily("snow-peas", "Snow Peas / Sitsaro", ("sitsaro", "snow peas", "chinese peas", "sweet peas")),
+    CropFamily("jackfruit", "Jackfruit / Langka", ("jackfruit", "langka")),
+    CropFamily("string-beans", "String Beans / Sitaw", ("string beans", "stringbeans", "sitaw", "sitao")),
+    CropFamily("siniguelas", "Spanish Plum / Siniguelas", ("siniguelas", "sinigwelas", "jamaica plum", "spanish plum")),
     CropFamily("mungbean", "Mung Bean / Monggo", ("mung bean", "mungbean", "monggo", "mongo", "munggo")),
 )
+
+
+PLANT_PARTS = ("leaves", "leaf", "tops", "hay")
 
 
 def _words(value):
@@ -72,8 +86,14 @@ def _has_phrase(text, phrase):
 def identify_family(product):
     text = _words(product)
     for group in FAMILIES:
-        if any(_has_phrase(text, alias) for alias in group.aliases):
-            return group
+        alias = next((a for a in group.aliases if _has_phrase(text, a)), None)
+        if alias is None:
+            continue
+        # Leaves, tops and hay are sold as their own produce: "Ampalaya leaves" is not bitter gourd.
+        part = next((w for w in PLANT_PARTS if _has_phrase(text, w)), None)
+        if part and part not in _words(alias).split():
+            break
+        return group
     return CropFamily(slugify(product, allow_unicode=False), product.strip().title())
 
 

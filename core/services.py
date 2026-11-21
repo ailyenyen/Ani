@@ -37,7 +37,7 @@ RANGE_CHOICES = [
 
 
 # Each market keeps the same colour in charts and lists (brand palette order).
-MARKET_COLORS = ["#0E3B22", "#3E7F53", "#8CC596", "#D3EBD3"]
+MARKET_COLORS = ["#2B341C", "#4D5A31", "#898F65", "#B9BB9C"]
 _MARKET_COLOR_ORDER = {"DA Bantay Presyo": 0, "Kadiwa": 1, "Local Market": 2, "Sari-sari Market": 3}
 
 

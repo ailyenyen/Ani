@@ -1,9 +1,9 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
-{% block title %}Market Prices{% endblock %}
-{% block header %}{% url 'home' as home_url %}{% include "core/partials/page_title.html" with title="Market Prices" lead="Find the latest prices for crops across different markets." back=home_url back_label="Back to Home" %}{% endblock %}
+{% block title %}Retail Prices{% endblock %}
+{% block header %}{% url 'home' as home_url %}{% include "core/partials/page_title.html" with title="Retail Prices" lead="The latest prices shoppers pay at markets, from DA Bantay Presyo, Kadiwa and local market reports." back=home_url back_label="Back to Market prices" %}{% endblock %}
 {% block content %}
-{% if live_reports %}<div class="offer-entry"><a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}">Browse Farmgate Prices</a></div>{% endif %}
+{% if live_reports %}<nav class="filter-bar series-switch" aria-label="Other price types"><a class="btn btn-soft btn-small" href="{% url 'home' %}">Compare all market prices</a><a class="btn btn-soft btn-small" href="{% url 'wholesale_prices' %}">Wholesale Prices</a><a class="btn btn-soft btn-small" href="{% url 'farmgate_prices' %}">Farmgate Prices</a><a class="btn btn-soft btn-small" href="{% url 'retail_monthly_prices' %}">Monthly Retail Averages</a></nav>{% endif %}
 <section class="card flush" aria-label="Crop prices">
   <form class="card-head" method="get" action="{% url 'prices' %}" style="display:block">
     <div class="filter-bar">

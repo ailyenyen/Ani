@@ -1,24 +1,27 @@
 import json
 from collections import defaultdict
+from datetime import timezone as dt_timezone
 from decimal import Decimal
 from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_POST
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
 
-from . import auth, services
+from . import auth, crop_lists, market_overview, services
+from .market_overview import REGION_NAMES, region_id
 from .alerts import check_alerts, describe_alert
 from .crop_browse import catalog, group_summaries
-from .forms import BuyerOfferForm, HarvestQuantityForm, LoginForm, PriceAlertForm, ProfileForm, SignupForm
+from .forms import LoginForm, PriceAlertForm, ProfileForm, SignupForm
 from .models import CropPrice, DeviceToken, Market, Notification, PriceAlert, SavedCrop, User
 from .templatetags.ani_tags import peso
 
@@ -108,53 +111,93 @@ def landing(request):
 
 
 def home(request):
+    """Market prices: retail, wholesale and farmgate prices for each crop, side by side."""
     db, user = request.db, request.ani_user
-    locations = services.list_locations(db)
-    location = _location_for(request, locations)
-
-    summaries = services.summarize_by_crop(services.latest_prices(db, location=location or None))
-    saved_ids = services.saved_crop_ids(db, user)
-    by_id = {s.crop.id: s for s in summaries}
-    ordered = [by_id[cid] for cid in saved_ids if cid in by_id]
-    ordered += [s for s in summaries if s.crop.id not in saved_ids]
     listings = catalog(db)
-    grouped = group_summaries(ordered, listings)
 
-    featured = ordered[0] if ordered else None
+    region = market_overview.remembered_region(request)
+
+    show = request.GET.get("show", "")
+    sort = request.GET.get("sort", "")
+    search = request.GET.get("q", "").strip()
+    if show not in dict(market_overview.SHOW_CHOICES) or (show == "mine" and not user):
+        show = ""
+    if sort not in dict(market_overview.SORT_CHOICES):
+        sort = ""
+    include_psa = not settings.ANI_SAMPLE_DATA_NOTICE
+    offered = market_overview.TYPE_KEYS if include_psa else ("retail",)
+    types = tuple(kind for kind in offered if kind in request.GET.getlist("types")) or offered
+
+    saved_ids = set(services.saved_crop_ids(db, user))
+    saved_families = {listing.family.slug for listing in listings.values() if listing.crop.id in saved_ids}
+    cards = market_overview.build_cards(db, listings, region, saved_families, include_psa, types)
+    cards = market_overview.filter_and_sort(cards, search, show, sort)
+
+    # Trend: the chosen crop, otherwise the first result that has monthly history.
+    chart_options = market_overview.chart_families(cards, region, types) if include_psa else []
+    chart_slug = request.GET.get("chart", "")
+    chart_card = next((card for card in cards if card.slug == chart_slug), None) or (chart_options[0] if chart_options else (cards[0] if cards else None))
+    ranges = {key: months for key, _label, months in market_overview.RANGES}
+    span = request.GET.get("range", "12")
+    if span not in ranges:
+        span = "12"
     chart = None
-    if featured:
-        headline = featured.headline
-        points = services.price_trend(db, headline.crop, headline.market, 7)
-        chart = services.chart_data(points, f"{headline.crop.name} Price — Last 7 Days")
+    if chart_card and include_psa:
+        chart = market_overview.price_history(chart_card.slug, region, types, ranges[span], chart_card.lines)
+        if chart and len(chart["labels"]) < 2:
+            chart = None
+    summary_lines = list(reversed(chart_card.lines)) if chart_card else []
+    chart_crop = None
+    if chart_card:
+        chart_crop = next((item.crop for item in listings.values() if item.family.slug == chart_card.slug), None)
+    retail_line = chart_card.any_line("retail") if chart_card else None
+    chart_price = retail_line.value if retail_line else None
 
-    markets_stmt = select(func.count(Market.id))
-    if location:
-        markets_stmt = markets_stmt.where(Market.location == location)
-    stats = {
-        "crop_count": len(grouped),
-        "source_count": len(services.list_sources(db)),
-        "market_count": db.scalar(markets_stmt),
-        "saved_count": len(saved_ids),
-        "active_alerts": db.scalar(
-            select(func.count(PriceAlert.id)).where(PriceAlert.user_id == user.id, PriceAlert.active.is_(True))
-        ) if user else 0,
-    }
+    query = request.GET.copy()
+    query.pop("page", None)
+    keep = {key: query.getlist(key) for key in ("q", "region", "types", "show", "sort", "chart", "range") if key in query}
+    page = Paginator(cards, 10).get_page(request.GET.get("page"))
+    newest = max((line.day for card in cards for line in card.lines if line.kind == "retail" and line.day), default=None)
 
-    return render(
-        request,
-        "core/home.html",
-        {
-            "stats": stats,
-            "locations": locations,
-            "location": location,
-            "featured": featured,
-            "chart": chart,
-            "latest": grouped[:6],
-            "featured_family": listings[featured.crop.id].family if featured else None,
-            "has_saved": bool(saved_ids),
-            "last_update": services.last_price_date(db),
-        },
-    )
+    def link(**changes):
+        params = request.GET.copy()
+        params.pop("page", None)
+        for key, value in changes.items():
+            if value is None:
+                params.pop(key, None)
+            elif isinstance(value, list):
+                params.setlist(key, value)
+            else:
+                params[key] = value
+        return "?" + params.urlencode()
+
+    for card in page.object_list:
+        card.chart_link = link(chart=card.slug) + "#trend"
+
+    return render(request, "core/home.html", {
+        "page": page,
+        "page_numbers": page.paginator.get_elided_page_range(page.number, on_each_side=1, on_ends=1),
+        "page_link": link(),
+        "keep": keep,
+        "regions": market_overview.REGIONS,
+        "region": region,
+        "region_name": REGION_NAMES.get(region, "the Philippines"),
+        "show": show, "sort": sort, "search": search,
+        "types": types,
+        "type_choices": [choice for choice in market_overview.PRICE_TYPES if choice[0] in offered],
+        "sort_choices": market_overview.SORT_CHOICES,
+        "show_links": [("", "All crops", link(show=None))] + ([("mine", "My crops", link(show="mine"))] if user else []),
+        "range_links": [(key, label, link(range=key) + "#trend") for key, label, _m in market_overview.RANGES],
+        "span": span,
+        "chart": chart, "chart_card": chart_card, "summary_lines": summary_lines,
+        "insight": market_overview.summary_insight(chart_card) if chart_card else "",
+        "chart_crop": chart_crop, "chart_price": chart_price,
+        # Shown whatever types are ticked: it always compares retail with farmgate.
+        "show_spread": include_psa,
+        "newest": newest,
+        "include_psa": include_psa,
+        "legend": market_overview.legend(include_psa, types),
+    })
 
 
 def market_prices(request):
@@ -296,35 +339,6 @@ def crop_detail(request, slug):
     )
 
 
-@never_cache
-@require_http_methods(["GET", "HEAD", "POST"])
-def buyer_offers(request):
-    data = request.POST if request.method == "POST" else None
-    harvest = HarvestQuantityForm(data)
-    offers = [("Offer A", BuyerOfferForm(data, prefix="offer_a")), ("Offer B", BuyerOfferForm(data, prefix="offer_b"))]
-    results = []
-    better_offer = None
-    difference = None
-
-    if data is not None and all([harvest.is_valid(), *(form.is_valid() for _, form in offers)]):
-        quantity = harvest.cleaned_data["quantity"]
-        for name, form in offers:
-            offer = form.cleaned_data
-            gross = services.money(quantity * offer["price"])
-            costs = (offer["transport"] or Decimal("0")) + (offer["handling"] or Decimal("0"))
-            net = gross - costs
-            results.append({"name": name, "gross": gross, "costs": costs, "net": net, "per_kg": services.money(net / quantity)})
-        first, second = results
-        difference = abs(first["net"] - second["net"])
-        if difference:
-            better_offer = max(results, key=lambda result: result["net"])["name"]
-
-    return render(request, "core/buyer_offers.html", {
-        "harvest": harvest, "offers": offers, "results": results,
-        "better_offer": better_offer, "difference": difference,
-    })
-
-
 def compare(request):
     from .models import RegionalQuote
     from .regional_views import regional_report
@@ -389,6 +403,32 @@ def compare(request):
 
 # --- Price alerts -----------------------------------------------------------
 
+def _alert_dialog_context(db, user, current=None):
+    """Choices for the new-alert dialog (every product, My Crops first)."""
+    saved_ids = set(services.saved_crop_ids(db, user))
+    current = current if current is not None else _headlines_by_crop(db, user.location)
+    return crop_lists.alert_choices(db, current, saved_ids, crop_lists.short_region(user.location))
+
+
+def _alert_progress(alert, summary):
+    """Where today's price sits against the target, for the bar on each alert."""
+    if summary is None or str(alert.target_price) == crop_lists.REPORT_TARGET:
+        return None
+    head = summary.headline
+    low = head.quote.low if head.quote else head.price
+    high = head.quote.high if head.quote else head.price
+    target = alert.target_price
+    above = alert.condition == PriceAlert.ABOVE
+    reached = high > target if above else low < target
+    to_go = 0 if reached else (target - high if above else low - target)
+    bottom = min(target, low) * Decimal("0.85")
+    top = max(target, high) * Decimal("1.1")
+    span = (top - bottom) or 1
+    place = lambda v: float(round((v - bottom) / span * 100, 1))
+    return {"reached": reached, "to_go": to_go, "target_pos": place(target), "low_pos": place(low),
+            "width": max(2.0, place(high) - place(low)), "now": head.display_price}
+
+
 @auth.login_required
 def alerts(request):
     db, user = request.db, request.ani_user
@@ -400,25 +440,65 @@ def alerts(request):
             .order_by(PriceAlert.created_at)
         )
     )
-    current = _headlines_by_crop(db, user.location, [a.crop_id for a in user_alerts]) if user_alerts else {}
-    notifications = list(
-        db.scalars(
-            select(Notification)
-            .where(Notification.user_id == user.id)
-            .order_by(Notification.created_at.desc())
-            .limit(10)
-        )
-    )
-    items = [
-        {"alert": a, "text": describe_alert(a), "current": current.get(a.crop_id)} for a in user_alerts
-    ]
-    response = render(
-        request, "core/alerts.html", {"items": items, "notifications": notifications}
-    )
-    # Notifications count as read once this page has been shown.
-    unread_ids = [n.id for n in notifications if not n.is_read]
-    if unread_ids:
-        db.execute(update(Notification).where(Notification.id.in_(unread_ids)).values(is_read=True))
+    listings = catalog(db)
+    current = _headlines_by_crop(db, user.location)
+    items = []
+    for a in user_alerts:
+        summary = current.get(a.crop_id)
+        listing = listings.get(a.crop_id)
+        items.append({
+            "alert": a, "summary": summary, "progress": _alert_progress(a, summary),
+            "title": crop_lists.title(listing) if listing else a.crop.name,
+            "label": crop_lists.variety_label(listing) if listing else "",
+            "report_only": str(a.target_price) == crop_lists.REPORT_TARGET,
+            "detail_link": reverse("crop_family", args=[listing.family.slug]) if listing else "",
+        })
+    alerted = {a.crop_id for a in user_alerts}
+    region_short = crop_lists.short_region(user.location)
+    waiting = []
+    for crop_id in services.saved_crop_ids(db, user):
+        listing = listings.get(crop_id)
+        if crop_id in alerted or listing is None:
+            continue
+        summary = current.get(crop_id)
+        waiting.append({"listing": listing, "title": crop_lists.title(listing), "label": crop_lists.variety_label(listing),
+                        "summary": summary, "low": summary and (summary.headline.quote.low if summary.headline.quote else summary.headline.price),
+                        "high": summary and (summary.headline.quote.high if summary.headline.quote else summary.headline.price)})
+    return render(request, "core/alerts.html", {
+        "items": items, "waiting": waiting, "active_count": sum(1 for a in user_alerts if a.active),
+        "push_on": bool(user.push_enabled and user.devices), "region_short": region_short,
+        "alert_choices": _alert_dialog_context(db, user, current),
+    })
+
+
+@auth.login_required
+def notifications(request):
+    """Messages sent by price alerts, newest first."""
+    db, user = request.db, request.ani_user
+    if request.method == "POST":
+        db.execute(update(Notification).where(Notification.user_id == user.id, Notification.is_read.is_(False))
+                   .values(is_read=True))
+        db.commit()
+        messages.success(request, "All notifications are marked as read.")
+        return redirect("notifications")
+    items = list(db.scalars(
+        select(Notification).where(Notification.user_id == user.id).order_by(Notification.created_at.desc()).limit(100)
+    ))
+    today = timezone.localdate()
+    groups = defaultdict(list)
+    for n in items:
+        stamp = n.created_at if timezone.is_aware(n.created_at) else timezone.make_aware(n.created_at, dt_timezone.utc)
+        day = timezone.localtime(stamp).date()
+        groups["Today" if day == today else "Yesterday" if (today - day).days == 1 else "Earlier"].append(n)
+    unread = sum(1 for n in items if not n.is_read)
+    response = render(request, "core/notifications.html", {
+        "groups": [(label, groups[label]) for label in ("Today", "Yesterday", "Earlier") if groups[label]],
+        "unread": unread, "total": len(items),
+        "alert_count": db.scalar(select(func.count(PriceAlert.id)).where(PriceAlert.user_id == user.id, PriceAlert.active.is_(True))),
+    })
+    # They count as read once they have been shown here.
+    if unread:
+        db.execute(update(Notification).where(Notification.id.in_([n.id for n in items if not n.is_read])).values(is_read=True))
         db.commit()
     return response
 
@@ -449,7 +529,8 @@ def alert_new(request):
         )
         if check_alerts(db, alert_ids=[alert.id]):
             messages.info(request, "Good news: that price has already been reached. See the message below.")
-        return redirect("alerts")
+        # From the pop-up dialog: stay on the page the alert was made from.
+        return redirect(_safe_next(request, reverse("alerts")))
 
     current = _headlines_by_crop(db, user.location)
     crop_options = [{"crop": c, "current": current.get(c.id)} for c in crops]
@@ -464,7 +545,7 @@ def alert_toggle(request, alert_id):
     request.db.commit()
     state = "on" if alert.active else "off"
     messages.success(request, f"{alert.crop.name} alert is now {state}.")
-    return redirect("alerts")
+    return redirect(_safe_next(request, reverse("alerts")))
 
 
 @auth.login_required
@@ -491,29 +572,62 @@ def my_crops(request):
             .order_by(SavedCrop.created_at)
         )
     )
-    current = _headlines_by_crop(db, user.location, [s.crop_id for s in saved]) if saved else {}
-    items = [{"saved": s, "summary": current.get(s.crop_id)} for s in saved]
-    return render(request, "core/my_crops.html", {"items": items})
+    listings = catalog(db)
+    categories = crop_lists.family_categories(listings)
+    current = _headlines_by_crop(db, user.location)
+    region_short = crop_lists.short_region(user.location)
+    items = []
+    for s_ in saved:
+        listing = listings.get(s_.crop_id)
+        summary = current.get(s_.crop_id)
+        head = summary.headline if summary else None
+        items.append({
+            "saved": s_, "crop": s_.crop, "summary": summary, "fresh": market_overview.freshness(head.date) if head else "old",
+            "title": crop_lists.title(listing) if listing else s_.crop.name,
+            "tags": crop_lists.tags(listing, categories) if listing else [],
+            "ranged": bool(head and head.quote and head.quote.low != head.quote.high),
+            "low": head and (head.quote.low if head.quote else head.price),
+            "high": head and (head.quote.high if head.quote else head.price),
+            "where": head and " · ".join(filter(None, [head.source, crop_lists.short_region(head.market.location) or head.market.location])),
+            "detail_link": (reverse("crop_family", args=[listing.family.slug]) + (f"?{urlencode({'region': region_id(user.location)})}" if user.location else "")) if listing else "",
+            "other_regions_link": reverse("crop_family", args=[listing.family.slug]) + "?region=&snap=retail#snapshot" if listing else "",
+        })
+    saved_ids = {s_.crop_id for s_ in saved}
+    groups, categories_present = crop_lists.add_groups(db, saved_ids)
+    return render(request, "core/my_crops.html", {
+        "items": items, "with_price": sum(1 for i in items if i["summary"]),
+        "waiting_count": sum(1 for i in items if not i["summary"]),
+        "report_alerts": set(db.scalars(select(PriceAlert.crop_id).where(
+            PriceAlert.user_id == user.id, PriceAlert.active.is_(True),
+            PriceAlert.target_price == Decimal(crop_lists.REPORT_TARGET)))),
+        "region_short": region_short, "region_label": crop_lists.region_label(user.location),
+        "add_groups": groups, "add_categories": categories_present,
+        "report_target": crop_lists.REPORT_TARGET,
+        "alert_choices": _alert_dialog_context(db, user, current),
+    })
 
 
 @auth.login_required
 def my_crops_add(request):
     db, user = request.db, request.ani_user
     if request.method == "POST":
-        crop = services.get_crop(db, request.POST.get("crop", ""))
-        if crop is None:
+        crops = [c for c in (services.get_crop(db, slug) for slug in request.POST.getlist("crop")) if c is not None]
+        if not crops:
             return HttpResponseBadRequest("Unknown crop")
-        if crop.id not in services.saved_crop_ids(db, user):
+        saved_ids = set(services.saved_crop_ids(db, user))
+        added = [c for c in crops if c.id not in saved_ids]
+        for crop in added:
             db.add(SavedCrop(user_id=user.id, crop_id=crop.id))
-            db.commit()
-            messages.success(request, f"{crop.name} was added to My Crops.")
+        db.commit()
+        if len(added) == 1:
+            messages.success(request, f"{added[0].name} was added to My Crops.")
+        elif added:
+            messages.success(request, f"{len(added)} crops were added to My Crops.")
         else:
-            messages.info(request, f"{crop.name} is already in My Crops.")
+            messages.info(request, "Those crops are already in My Crops.")
         return redirect(_safe_next(request, reverse("my_crops")))
-
-    saved_ids = set(services.saved_crop_ids(db, user))
-    available = [c for c in services.list_crops(db) if c.id not in saved_ids]
-    return render(request, "core/my_crops_add.html", {"crops": available})
+    # The picker lives in a dialog on the My Crops page.
+    return redirect(f"{reverse('my_crops')}#add")
 
 
 @auth.login_required

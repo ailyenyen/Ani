@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 
 from core.management.commands.sync_regions import store
 from scrapers.regional import Quote
@@ -41,19 +41,19 @@ class CropBrowseTests(DatabaseTestCase):
         self.assertContains(response, 'href="/crops/family/palay/"')
 
     def test_family_keeps_each_source_and_filters_variety_market_and_date(self, _today):
-        response = self.client.get("/crops/family/banana/")
+        response = self.client.get("/crops/family/banana/compare/")
         observations = response.context["page"].object_list
-        self.assertEqual({item.variety for item, _, _ in observations}, {"Lakatan", "Latundan", "Saba"})
-        self.assertEqual({price.source for item, price, _ in observations if item.variety == "Lakatan"}, {"DA", "LGU"})
-        self.assertTrue(all(price.date == TODAY for _, price, _ in observations))
-        market_b = next(price.market_id for _, price, _ in observations if price.market.name == "Market B")
-        response = self.client.get("/crops/family/banana/", {
+        self.assertEqual({row.listing.variety for row in observations}, {"Lakatan", "Latundan", "Saba"})
+        self.assertEqual({row.price.source for row in observations if row.listing.variety == "Lakatan"}, {"DA", "LGU"})
+        self.assertTrue(all(row.price.date == TODAY for row in observations))
+        market_b = next(row.price.market_id for row in observations if row.price.market.name == "Market B")
+        response = self.client.get("/crops/family/banana/compare/", {
             "variety": "Lakatan", "source": "LGU", "market": market_b,
             "date_from": (TODAY - timedelta(days=1)).isoformat(), "date_to": (TODAY - timedelta(days=1)).isoformat(),
         })
-        (listing, price, quote), = response.context["page"].object_list
-        self.assertEqual((listing.product, price.source, price.date), ("Saging (Lakatan)", "LGU", TODAY - timedelta(days=1)))
-        self.assertEqual((quote.low, quote.high), (Decimal("30"), Decimal("40")))
+        row, = response.context["page"].object_list
+        self.assertEqual((row.listing.product, row.price.source, row.price.date), ("Saging (Lakatan)", "LGU", TODAY - timedelta(days=1)))
+        self.assertEqual((row.low, row.high), (Decimal("30"), Decimal("40")))
         self.assertContains(response, "https://example.org/report")
 
     def test_regional_compare_accepts_old_family_names(self, _today):
@@ -72,8 +72,19 @@ class CropBrowseTests(DatabaseTestCase):
         ]}), encoding="utf-8")
         with override_settings(BASE_DIR=Path(self._tmp.name), ANI_SAMPLE_DATA_NOTICE=False):
             response = self.client.get("/crops/family/banana/", {"variety": "Lakatan"})
-            self.assertContains(response, "Farmgate Prices")
-            self.assertContains(response, "Published Retail Prices")
-            self.assertContains(response, "September 2026")
+            self.assertNotContains(response, "All PSA farmgate prices")
+            self.assertContains(response, "Compare prices")
+            self.assertContains(response, "Sep 2026")
             self.assertContains(response, "₱45.25")
             self.assertNotContains(response, "₱24.00")
+
+
+class PlantPartFamilyTests(SimpleTestCase):
+    def test_leaves_and_tops_are_not_the_crop_itself(self):
+        from core.crop_families import identify_family
+        self.assertEqual(identify_family("Ampalaya fruit [Bitter gourd]").slug, "bitter-gourd")
+        self.assertNotEqual(identify_family("Ampalaya leaves").slug, "bitter-gourd")
+        self.assertNotEqual(identify_family("Camote tops").slug, "sweet-potato")
+        self.assertNotEqual(identify_family("Rice hay, dried hays").slug, "rice")
+        self.assertEqual(identify_family("Banana leaves").slug, "banana-leaves")
+        self.assertEqual(identify_family("Onion Leaves").slug, "spring-onion")

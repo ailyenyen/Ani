@@ -1,31 +1,36 @@
 {% extends "core/base.html" %}
 {% load ani_tags %}
-{% block title %}Farmgate Prices{% endblock %}
+{% block title %}{{ series_page.title }}{% endblock %}
 {% block header %}
-  {% url 'prices' as prices_url %}
-  {% include "core/partials/page_title.html" with title="Farmgate Prices" lead="Browse the Philippine Statistics Authority’s monthly averages of prices received by producers." back=prices_url back_label="Back to Market Prices" %}
+  {% url 'home' as home_url %}
+  {% include "core/partials/page_title.html" with title=series_page.title lead=series_page.lead back=home_url back_label="Back to Market prices" %}
 {% endblock %}
 {% block content %}
+<nav class="filter-bar series-switch" aria-label="Other official price series">
+  <a class="btn btn-soft btn-small" href="{% url 'home' %}">Compare all market prices</a>
+  <a class="btn btn-soft btn-small" href="{% url 'prices' %}">Retail Prices (latest)</a>
+  {% for other in other_pages %}<a class="btn btn-soft btn-small" href="{% url other.url_name %}">{{ other.title }}</a>{% endfor %}
+</nav>
 {% if has_catalog %}
-<section class="card cm-controls" aria-label="Farmgate filters">
-  <form method="get" action="{% url 'farmgate_prices' %}">
+<section class="card cm-controls" aria-label="{{ series_page.title }} filters">
+  <form method="get" action="{% url series_page.url_name %}">
     <div class="cm-fields cm-report-filters">
       {% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
     </div>
     <div class="filter-bar">
       <button class="btn btn-primary" type="submit">Show prices</button>
-      <a href="{% url 'farmgate_prices' %}" class="btn btn-soft">Reset filters</a>
+      <a href="{% url series_page.url_name %}" class="btn btn-soft">Reset filters</a>
     </div>
   </form>
 </section>
-<section class="card farmgate-results" aria-labelledby="farmgate-reports-title">
-  <h2 id="farmgate-reports-title">Published Farmgate Prices</h2>
+<section class="card farmgate-results" aria-labelledby="series-reports-title">
+  <h2 id="series-reports-title">Published {{ series_page.title }}</h2>
   <p class="muted">For a like-for-like comparison, select one product and month and compare locations at the same geographic level.</p>
   {% if page.object_list %}
   <p class="result-line">{{ page.paginator.count }} report{{ page.paginator.count|pluralize }}{% if not form.month.value %} · Latest available per product and location{% endif %}</p>
-  <div class="report-table" tabindex="0" aria-label="Scrollable farmgate price table">
+  <div class="report-table" tabindex="0" aria-label="Scrollable {{ series_page.noun }} price table">
     <table class="data-table farmgate-table">
-      <thead><tr><th scope="col">Crop and product</th><th scope="col">Location</th><th scope="col">Farmgate price</th><th scope="col">Reporting month</th><th scope="col">Source</th></tr></thead>
+      <thead><tr><th scope="col">Crop and product</th><th scope="col">Location</th><th scope="col">{{ series_page.price_heading }}</th><th scope="col">Reporting month</th><th scope="col">Source</th></tr></thead>
       <tbody>{% for row in page.object_list %}<tr>
         <th scope="row">{{ row.family.name }}<small>{{ row.product }}</small></th>
         <td>{{ row.location }}<small>{{ row.level }}</small></td>
@@ -36,7 +41,7 @@
     </table>
   </div>
   {% if page.has_other_pages %}
-  <nav class="filter-bar crop-report-pages" aria-label="Farmgate report pages">
+  <nav class="filter-bar crop-report-pages" aria-label="{{ series_page.title }} pages">
     {% if page.has_previous %}<a class="btn btn-soft btn-small" href="?{{ filter_query }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}
     <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
     {% if page.has_next %}<a class="btn btn-soft btn-small" href="?{{ filter_query }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}
@@ -45,6 +50,6 @@
   {% else %}<p class="muted">{% if form.errors %}Check the highlighted filters and try again.{% else %}No published values match. Try another month, location, or product.{% endif %}</p>{% endif %}
 </section>
 {% else %}
-<section class="card empty-state"><h2>No published farmgate data loaded</h2><p>Farmgate prices are available in live-data mode after a PSA import.</p></section>
+<section class="card empty-state"><h2>No published {{ series_page.noun }} data loaded</h2><p>{{ series_page.title }} are available in live-data mode after a PSA import.</p></section>
 {% endif %}
 {% endblock %}

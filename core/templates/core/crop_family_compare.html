@@ -1,0 +1,107 @@
+{% extends "core/base.html" %}
+{% load ani_tags %}
+{% block title %}Compare {{ family.name }} prices{% endblock %}
+{% block header %}{% url 'crop_family_compare' family.slug as action %}{% include "core/partials/cf_header.html" with title="Compare prices" eyebrow=family.name back=crop_link back_label="Back to "|add:family.name action=action %}{% endblock %}
+{% block content %}
+<section class="card flush cf-compare" id="compare" aria-labelledby="compare-title">
+  <div class="cf-compare-head">
+    <div>
+      <h2 id="compare-title">{% if view == "regions" %}Average price per region{% else %}Latest price per market{% endif %}</h2>
+      <p class="card-sub">{% if view == "regions" %}Average prices per region. Choose a region to see its markets.{% else %}Latest report from each market{% if region %} in {{ region_name }}{% endif %}.{% endif %}</p>
+    </div>
+    <nav class="segmented cf-tabs" aria-label="Compare by">
+      {% for key, label, href in view_links %}<a href="{{ href }}"{% if key == view %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+    </nav>
+  </div>
+
+  {% if view == "markets" %}
+  <form class="cf-tools" method="get" action="{% url 'crop_family' family.slug %}">
+    {% for key, values in keep.items %}{% if key == "variety" or key == "range" or key == "view" %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+    <input type="hidden" name="region" value="{{ region }}">
+    <label class="cp-sort"><span>Sort</span>
+      <select name="sort" data-autosubmit>{% for key, label in sort_choices %}<option value="{{ key }}"{% if key == sort %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    </label>
+    <details class="cf-filters"{% if form.source.value or form.market.value or form.date_from.value or form.date_to.value or form.errors %} open{% endif %}>
+      <summary>{% icon 'sliders' 18 %} Source, market and dates</summary>
+      <div class="cf-filter-fields">
+        {% for field in form %}{% if field.name != "variety" %}<div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}
+      </div>
+      {{ form.non_field_errors }}
+      <div class="filter-bar">
+        <button class="btn btn-primary btn-small" type="submit">Apply</button>
+        <a class="btn btn-soft btn-small" href="?region={{ region }}">Clear</a>
+      </div>
+      <p class="hint">Pick dates to see every report in that period instead of only the latest.</p>
+    </details>
+  </form>
+
+  {% if page.object_list %}
+  {% if average_bar is not None %}<ul class="cf-bars-key"><li><span class="cf-key-avg" aria-hidden="true"></span>Dashed line: retail average {{ retail.average|peso }}</li><li><span class="cf-key-range" aria-hidden="true"></span>Lighter end: published range</li></ul>{% endif %}
+  <ol class="cf-bars"{% if average_bar is not None %} style="--avg: {{ average_bar }}%"{% endif %}>
+    {% for row in page.object_list %}
+    <li class="cf-bar-row{% if row.newest %} is-newest{% endif %}">
+      <div class="cf-bar-label">
+        <a href="{% url 'crop_detail' row.listing.crop.slug %}?location={{ row.price.market.location|urlencode }}" title="Price trend and alerts for this market">{{ row.price.market.name|title }}</a>
+        <small>{% if not region %}<span>{{ row.price.market.location }}</span>{% endif %}{% if row.listing.variety != "Unspecified variety" %}<span>{{ row.listing.variety }}</span>{% endif %}<span>{% if row.price.evidence %}<a href="{{ row.price.evidence.source_url }}" target="_blank" rel="noopener">{{ row.price.source }}</a>{% else %}{{ row.price.source }}{% endif %}</span></small>
+      </div>
+      <div class="cf-bar-plot{% if average_bar is not None %} has-avg{% endif %}" aria-hidden="true">
+        {% if row.high != row.low %}<span class="cf-bar-ext" style="width: {{ row.bar }}%"></span>{% endif %}
+        <span class="cf-bar-fill" style="width: {{ row.low_bar }}%"></span>
+      </div>
+      <div class="cf-bar-value">
+        <strong>{{ row.low|peso }}{% if row.high != row.low %}<span class="cp-range">–{{ row.high|peso }}</span>{% endif %}</strong>
+        <small>{% if row.difference is not None %}{% if row.difference > 0 %}<span class="cf-up">+{{ row.difference|peso }}</span>{% elif row.difference < 0 %}<span class="cf-down">−{{ row.difference|peso|cut:"-" }}</span>{% else %}Same{% endif %} · {% endif %}<span class="fresh fresh-{{ row.fresh }}" aria-hidden="true"></span>{{ row.price.date|date:"M j" }}{% if row.newest %} <span class="tag cf-tag-new">Newest</span>{% endif %}</small>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <div class="empty-state">
+    <h3>No market reports</h3>
+    <p>{% if form.errors %}Check the highlighted filters and try again.{% else %}No market{% if region %} in {{ region_name }}{% endif %} reported this crop for these filters.{% endif %}</p>
+    <a class="btn btn-secondary" href="{{ view_links.1.2 }}">Compare regions instead</a>
+  </div>
+  {% endif %}
+
+  <footer class="cp-table-foot">
+    <p>{% if page.paginator.count %}{{ page.paginator.count }} report{{ page.paginator.count|pluralize }} · {% if has_date_range %}every report in the chosen dates{% else %}latest per market and source{% endif %}{% endif %}</p>
+    {% if page.has_other_pages %}
+    <nav class="cp-pages" aria-label="Pages">
+      {% if page.has_previous %}<a class="cp-page" href="{{ page_link }}&amp;page={{ page.previous_page_number }}" aria-label="Previous page">{% icon 'chevron-left' 16 %}</a>{% endif %}
+      <span class="cp-page is-current" aria-current="page">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}<a class="cp-page" href="{{ page_link }}&amp;page={{ page.next_page_number }}" aria-label="Next page">{% icon 'chevron-right' 16 %}</a>{% endif %}
+    </nav>
+    {% endif %}
+  </footer>
+
+  {% else %}
+  {% if region_rows %}
+  <ul class="cf-bars-key cf-legend-kinds" aria-label="Bar colours">
+    <li><span class="cf-key-bar mp-retail" aria-hidden="true"></span>Retail average</li>
+    {% if include_psa %}<li><span class="cf-key-bar mp-wholesale" aria-hidden="true"></span>Wholesale</li><li><span class="cf-key-bar mp-farmgate" aria-hidden="true"></span>Farmgate</li>{% endif %}
+  </ul>
+  <ol class="cf-bars cf-bars-regions">
+    {% for row in region_rows %}
+    <li class="cf-bar-row{% if row.current %} is-current{% endif %}{% if not row.key %} is-total{% endif %}">
+      <div class="cf-bar-label">
+        <a href="{{ row.markets_link }}">{{ row.name }}</a>{% if row.current %} <span class="tag cf-tag-new">Selected</span>{% endif %}
+        <small>{% if row.retail %}{{ row.retail.markets }} market{{ row.retail.markets|pluralize }} · <span class="fresh fresh-{{ row.retail.fresh }}" aria-hidden="true"></span>{{ row.retail.newest.day|date:"M j" }}{% else %}No market reports{% endif %}</small>
+      </div>
+      <div class="cf-bar-group">
+        <div class="cf-gbar mp-retail"><span class="cf-gbar-track" aria-hidden="true">{% if row.bars.retail %}<span style="width: {{ row.bars.retail }}%"></span>{% endif %}</span><span class="cf-gbar-value"><span class="sr-only">Retail average </span>{% if row.retail %}{{ row.retail.average|peso }}{% else %}—{% endif %}</span></div>
+        {% if include_psa %}
+        <div class="cf-gbar mp-wholesale"><span class="cf-gbar-track" aria-hidden="true">{% if row.bars.wholesale %}<span style="width: {{ row.bars.wholesale }}%"></span>{% endif %}</span><span class="cf-gbar-value"><span class="sr-only">Wholesale </span>{% if row.wholesale.value is not None %}{{ row.wholesale.value|peso }} <small>{{ row.wholesale.when }}</small>{% else %}—{% endif %}</span></div>
+        <div class="cf-gbar mp-farmgate"><span class="cf-gbar-track" aria-hidden="true">{% if row.bars.farmgate %}<span style="width: {{ row.bars.farmgate }}%"></span>{% endif %}</span><span class="cf-gbar-value"><span class="sr-only">Farmgate </span>{% if row.farmgate.value is not None %}{{ row.farmgate.value|peso }} <small>{{ row.farmgate.when }}</small>{% else %}—{% endif %}</span></div>
+        {% endif %}
+      </div>
+      <a class="cf-go" href="{{ row.markets_link }}" aria-label="Markets in {{ row.name }}"><span class="cf-go-text">Markets</span>{% icon 'chevron-right' 18 %}</a>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <div class="empty-state"><h3>No regional prices</h3><p>No region has published prices for this crop yet.</p></div>
+  {% endif %}
+  <footer class="cp-table-foot"><p>Retail: average of each market’s latest report, all sources · Wholesale and farmgate: PSA monthly averages</p></footer>
+  {% endif %}
+</section>
+{% endblock %}

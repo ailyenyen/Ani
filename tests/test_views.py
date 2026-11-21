@@ -3,7 +3,7 @@ from unittest import mock
 from django.test import override_settings
 from sqlalchemy import select
 
-from core.models import Market, PriceAlert, SavedCrop, User
+from core.models import Market, Notification, PriceAlert, SavedCrop, User
 
 from .base import TODAY, DatabaseTestCase
 
@@ -62,6 +62,24 @@ class ViewTests(DatabaseTestCase):
         alerts = self.db.scalars(select(PriceAlert).where(PriceAlert.user_id == user.id)).all()
         self.assertIn("75.00", [str(a.target_price) for a in alerts])
 
+    def test_alert_dialog_returns_to_the_page_it_was_opened_from(self, _today):
+        self.login()
+        page = self.client.get("/home/")
+        self.assertContains(page, 'id="alert-dialog"')
+        response = self.client.post("/alerts/new/", {"crop": "sili", "target_price": "60", "condition": "below",
+                                                     "next": "/crops/family/chili/"})
+        self.assertRedirects(response, "/crops/family/chili/", fetch_redirect_response=False)
+        # Never to another site.
+        response = self.client.post("/alerts/new/", {"crop": "sili", "target_price": "61", "condition": "below",
+                                                     "next": "https://example.com/"})
+        self.assertRedirects(response, "/alerts/", fetch_redirect_response=False)
+
+    def test_alert_page_uses_a_searchable_crop_picker(self, _today):
+        self.login()
+        response = self.client.get("/alerts/new/", {"crop": "sili"})
+        self.assertContains(response, "data-combobox")
+        self.assertContains(response, 'value="sili" data-price')
+
     def test_alert_form_errors_are_plain(self, _today):
         self.login()
         response = self.client.post("/alerts/new/", {"crop": "", "target_price": "abc"})
@@ -74,6 +92,42 @@ class ViewTests(DatabaseTestCase):
         juan = self.db.scalar(select(User).where(User.email == "juan@example.com"))
         alert = self.db.scalars(select(PriceAlert).where(PriceAlert.user_id == juan.id)).first()
         self.assertEqual(self.client.post(f"/alerts/{alert.id}/delete/").status_code, 404)
+
+    def test_add_several_crops_at_once_and_see_them_with_details_links(self, _today):
+        self.login()
+        response = self.client.post("/my-crops/add/", {"crop": ["talong", "kamatis"], "next": "/my-crops/"})
+        self.assertRedirects(response, "/my-crops/", fetch_redirect_response=False)
+        page = self.client.get("/my-crops/")
+        self.assertContains(page, "View details")
+        self.assertNotContains(page, "View Price")
+        self.assertContains(page, 'id="add-dialog"')
+        self.assertContains(page, 'id="alert-dialog"')
+        titles = [item["title"] for item in page.context["items"]]
+        self.assertTrue({"Talong", "Kamatis"} <= set(titles) or len(titles) >= 2)
+        for item in page.context["items"]:
+            self.assertTrue(item["detail_link"].startswith("/crops/family/"))
+        # The old picker page now opens the dialog on My Crops.
+        self.assertRedirects(self.client.get("/my-crops/add/"), "/my-crops/#add", fetch_redirect_response=False)
+
+    def test_notifications_have_their_own_page(self, _today):
+        self.login()
+        juan = self.db.scalar(select(User).where(User.email == "juan@example.com"))
+        self.db.add(Notification(user_id=juan.id, title="Sili is now ₱80.00/kg", message="That is above your target.", link="/crops/family/chili/"))
+        self.db.commit()
+        alerts = self.client.get("/alerts/")
+        self.assertNotContains(alerts, "That is above your target.")
+        page = self.client.get("/notifications/")
+        self.assertContains(page, "That is above your target.")
+        self.assertEqual(page.context["unread"], 1)
+        self.assertEqual(self.client.get("/notifications/").context["unread"], 0)  # read once shown
+        home = self.client.get("/home/")
+        self.assertContains(home, 'href="/notifications/"')
+
+    def test_notify_when_reported_is_an_alert_for_any_report(self, _today):
+        self.login()
+        self.client.post("/alerts/new/", {"crop": "talong", "condition": "above", "target_price": "0.01", "next": "/my-crops/"})
+        page = self.client.get("/alerts/")
+        self.assertContains(page, "When a price is reported")
 
     def test_save_crop(self, _today):
         self.login()

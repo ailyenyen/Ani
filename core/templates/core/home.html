@@ -1,113 +1,204 @@
 {% extends "core/base.html" %}
-{% load static ani_tags %}
-{% block title %}Home{% endblock %}
-{% block header %}<div>
-  <h1>{% greeting %}, {% if current_user %}{{ current_user.first_name }}{% else %}Farmer{% endif %}!</h1>
-  <form class="lead" method="get" action="{% url 'home' %}">
-    <label for="home-location">Here are the latest crop prices in</label>
-    {% include "core/partials/location_select.html" with select_id="home-location" allow_all=True inline=True %}
-    <button class="btn btn-secondary btn-small js-hide" type="submit">Show</button>
+{% load ani_tags %}
+{% block title %}Crop prices{% endblock %}
+{% block header %}<div class="cp-top">
+  <form class="cp-search" method="get" action="{% url 'home' %}" role="search">
+    <label class="sr-only" for="cp-q">Find a crop</label>
+    {% icon 'search' 20 %}
+    <input id="cp-q" type="search" name="q" value="{{ search }}" placeholder="Find a crop, e.g. tomato, kamatis, rice" autocomplete="off">
+    {% for key, values in keep.items %}{% if key != "q" and key != "chart" %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+    <button class="btn btn-primary btn-small" type="submit">Search</button>
+  </form>
+  <form class="cp-region" method="get" action="{% url 'home' %}">
+    {% for key, values in keep.items %}{% if key != "region" and key != "chart" %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+    {% icon 'pin' 18 %}
+    <label for="cp-region-select">Region</label>
+    <select id="cp-region-select" name="region" data-autosubmit>
+      <option value=""{% if not region %} selected{% endif %}>All of the Philippines</option>
+      {% for key, name, _words in regions %}<option value="{{ key }}"{% if key == region %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-secondary btn-small js-hide" type="submit">Go</button>
   </form>
 </div>{% endblock %}
 {% block content %}
-<div class="home-grid">
-  <section class="stat-cards" aria-label="Summary">
-    {% if current_user %}
-      <a class="stat-card" href="{% url 'my_crops' %}">
-        <span class="icon-badge">{% icon 'sprout' 22 %}</span>
-        <span class="stat-card-text"><span class="stat-card-label">Crops Tracked</span><span class="stat-card-value">{{ stats.saved_count }}</span></span>
-      </a>
-      <a class="stat-card" href="{% url 'alerts' %}">
-        <span class="icon-badge yellow">{% icon 'bell' 22 %}</span>
-        <span class="stat-card-text"><span class="stat-card-label">Active Alerts</span><span class="stat-card-value">{{ stats.active_alerts }}</span></span>
-      </a>
-    {% else %}
-      <div class="stat-card">
-        <span class="icon-badge">{% icon 'sprout' 22 %}</span>
-        <span class="stat-card-text"><span class="stat-card-label">Crops Tracked</span><span class="stat-card-value">{{ stats.crop_count }}</span></span>
-      </div>
-      <div class="stat-card">
-        <span class="icon-badge yellow">{% icon 'shield' 22 %}</span>
-        <span class="stat-card-text"><span class="stat-card-label">Price Sources</span><span class="stat-card-value">{{ stats.source_count }}</span></span>
-      </div>
-    {% endif %}
-    <div class="stat-card">
-      <span class="icon-badge">{% icon 'store' 22 %}</span>
-      <span class="stat-card-text"><span class="stat-card-label">{% if live_reports %}Markets &amp; series{% else %}Markets Monitored{% endif %}</span><span class="stat-card-value">{{ stats.market_count }}</span></span>
-    </div>
-    <div class="stat-card">
-      <span class="icon-badge cream">{% icon 'calendar' 22 %}</span>
-      <span class="stat-card-text"><span class="stat-card-label">Last Updated</span><span class="stat-card-value small">{% if last_update %}{{ last_update|date:"M j, Y" }}{% else %}—{% endif %}</span></span>
-    </div>
-  </section>
-
-  {% if featured %}{% with row=featured.headline %}
-  <section class="card featured" aria-labelledby="featured-title">
-    <div>
-      <p class="eyebrow">{% if has_saved %}Your Crop{% else %}Featured Crop{% endif %}</p>
-      <div class="featured-head">
-        <span class="crop-icon" aria-hidden="true">{{ row.crop.icon }}</span>
-        <div>
-          <h2 class="featured-name" id="featured-title">{{ row.crop.name }}</h2>
-          <div class="price-line">
-            <p class="price-big">{{ row.display_price }}<span class="unit">/{{ row.crop.unit }}</span></p>
-            <span class="change-block">{% include "core/partials/change.html" with row=row %}{% if row.direction == 'up' or row.direction == 'down' %}<small>vs. last week</small>{% endif %}</span>
-          </div>
-        </div>
-      </div>
-      <p class="source-line">{% icon 'shield' 16 %}Source: {{ row.source }} · {{ row.market.location }}</p>
-      {% if row.evidence %}<p><a href="{{ row.evidence.source_url }}" target="_blank" rel="noopener">Official report</a> · {% if row.quote %}Reported{% else %}Week ending{% endif %} {{ row.date|date:"M j, Y" }}</p>{% endif %}
-      <a class="btn btn-soft btn-small" href="{% url 'crop_family' featured_family.slug %}">View Details</a>
-    </div>
-    {% if chart and chart.values|length > 1 %}
-    <div class="featured-chart">
-      <h3 class="chart-title">Price Trend (Last 7 days)</h3>
-      <p class="chart-note">{{ row.market.name }}, {{ row.market.location }}</p>
-      <div class="chart-box">
-        <canvas data-chart="line" data-source="featured-chart-data" role="img"
-          aria-label="{{ chart.title }}: from {{ chart.values|first|peso }} to {{ chart.values|last|peso }} per kilo."></canvas>
-      </div>
-      {{ chart|json_script:"featured-chart-data" }}
-    </div>
-    {% endif %}
-    <div class="featured-art" aria-hidden="true"><img src="{% static 'core/img/palay.svg' %}" alt=""></div>
-  </section>
-  {% endwith %}{% endif %}
-
-  <nav class="quick-actions" aria-label="Quick actions">
-    <a class="quick-action" href="{% url 'prices' %}">{% icon 'store' 26 %}Market Prices</a>
-    <a class="quick-action" href="{% url 'compare' %}">{% icon 'compare' 26 %}Compare Markets</a>
-    <a class="quick-action" href="{% url 'alert_new' %}">{% icon 'bell' 26 %}Set Price Alert</a>
-  </nav>
-
-  <section class="card flush latest" aria-labelledby="latest-title">
-    <div class="card-head" style="margin-bottom:0">
-      <h2 id="latest-title">{% if has_saved %}Your Crops' Latest Prices{% else %}Latest Market Prices{% endif %}</h2>
-      <a class="link-more" href="{% url 'prices' %}">View All {% icon 'arrow-right' 16 %}</a>
-    </div>
-    {% if latest %}
-      {% include "core/partials/crop_groups.html" with groups=latest %}
-    {% else %}
-      <div class="empty-state">
-        <span class="empty-emoji" aria-hidden="true">🌾</span>
-        <h3>No prices yet</h3>
-        <p>Prices will appear here as soon as they are collected.</p>
-      </div>
-    {% endif %}
-  </section>
-
-  {% if not current_user %}
-  <section class="card join-card" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
-    <div style="display:flex;gap:14px;align-items:center">
-      <span class="icon-badge">{% icon 'bell' 22 %}</span>
-      <div>
-        <h2>Save your crops and get price alerts</h2>
-        <p class="card-sub">Create a free account. It takes less than a minute.</p>
-      </div>
-    </div>
-    <a class="btn btn-primary" href="{% url 'signup' %}">Create free account</a>
-  </section>
-  {% endif %}
+<div class="cp-titlebar">
+  <div>
+    <h1>Crop prices</h1>
+    <p class="muted">{{ page.paginator.count }} crop{{ page.paginator.count|pluralize }} in {{ region_name }}{% if newest %} · newest report {{ newest|date:"M j, Y" }}{% endif %}</p>
+  </div>
+  <ul class="cp-fresh-key" aria-label="How recent each price is">
+    <li><span class="fresh fresh-new" aria-hidden="true"></span>Within 30 days</li>
+    <li><span class="fresh fresh-aging" aria-hidden="true"></span>1–3 months old</li>
+    <li><span class="fresh fresh-old" aria-hidden="true"></span>Older than 3 months</li>
+  </ul>
 </div>
+
+{% if chart_card %}
+<div class="cp-overview" id="trend">
+  <section class="card cp-trend" aria-labelledby="trend-title">
+    <div class="cp-card-head">
+      <div>
+        <p class="eyebrow">Price trend</p>
+        <h2 id="trend-title">{{ chart_card.name }}</h2>
+        <p class="card-sub">Monthly average per kilo · PSA</p>
+      </div>
+      {% if chart %}
+      <nav class="segmented" aria-label="Time range">
+        {% for key, label, href in range_links %}<a href="{{ href }}"{% if key == span %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+      </nav>
+      {% endif %}
+    </div>
+    {% if chart %}
+    <ul class="cp-legend" aria-label="Chart lines">
+      {% for dataset in chart.datasets %}<li class="mp-{{ dataset.kind }}"><span class="cp-swatch cp-swatch-{{ dataset.kind }}" aria-hidden="true"></span>{{ dataset.label }}</li>{% endfor %}
+      {% if chart.markers %}<li><span class="cp-swatch-point" aria-hidden="true"></span>Newest report</li>{% endif %}
+    </ul>
+    <div class="chart-box cp-chart">
+      <canvas data-chart="trend-overview" data-source="trend-data" role="img" aria-label="Monthly {{ chart_card.name }} prices by price type in {{ region_name }}, with the newest reports marked."></canvas>
+    </div>
+    {{ chart|json_script:"trend-data" }}
+    {% else %}
+    <div class="cp-no-chart"><p class="muted">{% if include_psa %}The PSA has not published monthly averages for this crop{% if region %} in this region{% endif %}.{% else %}Monthly PSA trends are available with live data.{% endif %}</p></div>
+    {% endif %}
+  </section>
+
+  <aside class="card cp-summary" aria-labelledby="summary-title">
+    <div class="cp-summary-head">
+      <span class="crop-icon" aria-hidden="true">{{ chart_card.icon }}</span>
+      <div>
+        <h2 id="summary-title">{% if chart_card.detail_link %}<a href="{{ chart_card.detail_link }}">{{ chart_card.name }}</a>{% else %}{{ chart_card.name }}{% endif %}</h2>
+        <p class="card-sub">Newest reports</p>
+      </div>
+      {% if chart_card.saved %}<span class="tag tag-best">My crop</span>{% endif %}
+    </div>
+    <dl class="cp-summary-lines">
+      {% for line in summary_lines %}
+      <div class="cp-summary-line">
+        <dt><strong>{{ line.label }}</strong>
+          {% if line.value is not None %}<span class="cp-date"><span class="fresh fresh-{{ line.fresh }}" aria-hidden="true"></span>{{ line.when }}{% if line.national %} · whole country{% endif %}</span>
+          {% else %}<span class="cp-date muted">No recent report</span>{% endif %}
+        </dt>
+        <dd>{% if line.value is not None %}{{ line.value|peso }}{% if line.ranged %}<span class="cp-range">–{{ line.high|peso }}</span>{% endif %}{% if line.source_note %}<small class="cp-source">{{ line.source_note }}</small>{% endif %}{% else %}<span class="muted" aria-label="No price">—</span>{% endif %}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+    {% if insight %}<p class="cp-insight">{{ insight }}</p>{% endif %}
+    <div class="cp-summary-actions">
+      {% if chart_crop %}{% if chart_card.saved %}{% include "core/partials/alert_button.html" with crop_slug=chart_crop.slug crop_name=chart_card.name price=chart_price price_label="Retail now" %}{% else %}{% include "core/partials/my_crop_button.html" with saved=False crop_slug=chart_crop.slug style="btn-primary" %}{% endif %}{% endif %}
+      {% if chart_card.detail_link %}<a class="btn btn-secondary btn-small cp-details-btn" href="{{ chart_card.detail_link }}">View details{% icon 'chevron-right' 16 %}</a>{% endif %}
+    </div>
+  </aside>
+</div>
+{% endif %}
+
+<section class="card flush cp-table-card" aria-labelledby="all-crops-title">
+  <form class="cp-table-head" method="get" action="{% url 'home' %}">
+    <h2 id="all-crops-title">All crops</h2>
+    {% for key, values in keep.items %}{% if key == "q" or key == "region" or key == "chart" or key == "range" or key == "show" %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+    <div class="cp-controls">
+      {% if type_choices|length > 1 %}
+      <fieldset class="cp-types">
+        <legend class="sr-only">Price types to show</legend>
+        {% for key, label, meaning in type_choices %}
+        {% if key in types and types|length == 1 %}
+        <label class="cp-type is-locked" title="{{ meaning }} · keep at least one price type on"><input type="checkbox" value="{{ key }}" checked disabled><input type="hidden" name="types" value="{{ key }}"><span class="cp-type-mark" aria-hidden="true">✓</span>{{ label }}</label>
+        {% else %}
+        <label class="cp-type" title="{{ meaning }}"><input type="checkbox" name="types" value="{{ key }}"{% if key in types %} checked{% endif %} data-autosubmit><span class="cp-type-mark" aria-hidden="true">{% if key in types %}✓{% else %}✕{% endif %}</span>{{ label }}</label>
+        {% endif %}
+        {% endfor %}
+      </fieldset>
+      {% endif %}
+      {% if show_links|length > 1 %}
+      <nav class="segmented cp-show" aria-label="Which crops">
+        {% for key, label, href in show_links %}<a href="{{ href }}"{% if key == show %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+      </nav>
+      {% endif %}
+      <label class="cp-sort"><span>Sort</span>
+        <select name="sort" data-autosubmit>
+          {% for key, label in sort_choices %}<option value="{{ key }}"{% if key == sort %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="btn btn-secondary btn-small js-hide" type="submit">Apply</button>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+  <table class="cp-table">
+    <thead>
+      <tr>
+        <th scope="col">Crop</th>
+        {% for key, label, meaning in type_choices %}{% if key in types %}<th scope="col" class="num">{{ label }}</th>{% endif %}{% endfor %}
+        {% if show_spread %}<th scope="col" class="num">Retail minus farmgate</th>{% endif %}
+        <th scope="col"><span class="sr-only">Open</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for card in page.object_list %}
+      <tr{% if card.detail_link %} data-href="{{ card.detail_link }}"{% endif %}{% if chart_card and card.slug == chart_card.slug %} class="is-charted"{% endif %}>
+        <td class="cp-crop" data-label="Crop">
+          <span class="crop-icon" aria-hidden="true">{{ card.icon }}</span>
+          <span class="cp-crop-text">
+            <span class="cp-crop-name">{% if card.detail_link %}<a href="{{ card.detail_link }}">{{ card.title }}</a>{% else %}{{ card.title }}{% endif %}{% if card.saved %} <span class="tag tag-best">My crop</span>{% endif %}</span>
+            <span class="cp-crop-sub">{{ card.subtitle }}{% if chart_card and card.slug == chart_card.slug %}{% if card.subtitle %} · {% endif %}shown in chart{% elif include_psa %}{% if card.subtitle %} · {% endif %}<a class="cp-chart-link" href="{{ card.chart_link }}">Show in chart</a>{% endif %}</span>
+          </span>
+        </td>
+        {% for line in card.lines %}
+        <td class="num" data-label="{{ line.label }}">
+          {% if line.value is not None %}
+            <strong class="cp-price" title="{{ line.source_note }}">{{ line.value|peso }}{% if line.ranged %}<span class="cp-range">–{{ line.high|peso }}</span>{% endif %}</strong>
+            <span class="cp-date"><span class="fresh fresh-{{ line.fresh }}" aria-hidden="true"></span>{{ line.when }}{% if line.national %} · PH<span class="sr-only"> whole-country average; none published for this region</span>{% endif %}</span>
+          {% else %}
+            <strong class="cp-price muted" aria-label="No price">—</strong>
+            <span class="cp-date muted">{% if line.kind == "farmgate" %}Not published{% else %}No report{% endif %}</span>
+          {% endif %}
+        </td>
+        {% endfor %}
+        {% if show_spread %}
+        <td class="num" data-label="Retail minus farmgate">
+          {% if card.spread is not None %}
+            <strong class="cp-price">{% if card.spread >= 0 %}+{% else %}−{% endif %}{{ card.spread_abs|peso }}</strong>
+            <span class="cp-date{% if ' vs ' in card.spread_note %} cp-note-mixed{% endif %}">{{ card.spread_note }}</span>
+          {% else %}
+            <strong class="cp-price muted">—</strong>
+            <span class="cp-date muted">{{ card.spread_note }}</span>
+          {% endif %}
+        </td>
+        {% endif %}
+        <td class="cp-go">{% if card.detail_link %}{% icon 'chevron-right' 18 %}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <span class="empty-emoji" aria-hidden="true">🔍</span>
+    <h3>No crops match</h3>
+    <p>Try another crop name, choose “All of the Philippines”, or turn on more price types.</p>
+    <a class="btn btn-secondary" href="{% url 'home' %}?region=">Show all crops</a>
+  </div>
+  {% endif %}
+
+  <footer class="cp-table-foot">
+    <p>{% if page.paginator.count %}Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }} · {% endif %}Sources: DA Bantay Presyo, local market reports{% if include_psa %}, PSA{% endif %}</p>
+    {% if page.has_other_pages %}
+    <nav class="cp-pages" aria-label="Pages">
+      {% if page.has_previous %}<a class="cp-page" href="{{ page_link }}&amp;page={{ page.previous_page_number }}" aria-label="Previous page">{% icon 'chevron-left' 16 %}</a>{% else %}<span class="cp-page is-disabled" aria-hidden="true">{% icon 'chevron-left' 16 %}</span>{% endif %}
+      {% for number in page_numbers %}
+        {% if number == page.paginator.ELLIPSIS %}<span class="cp-page is-gap">…</span>
+        {% elif number == page.number %}<span class="cp-page is-current" aria-current="page">{{ number }}</span>
+        {% else %}<a class="cp-page" href="{{ page_link }}&amp;page={{ number }}">{{ number }}</a>{% endif %}
+      {% endfor %}
+      {% if page.has_next %}<a class="cp-page" href="{{ page_link }}&amp;page={{ page.next_page_number }}" aria-label="Next page">{% icon 'chevron-right' 16 %}</a>{% else %}<span class="cp-page is-disabled" aria-hidden="true">{% icon 'chevron-right' 16 %}</span>{% endif %}
+    </nav>
+    {% endif %}
+  </footer>
+</section>
+
+{% if not current_user %}
+<section class="card mp-join">
+  <div><h2>Save your crops and get price alerts</h2><p class="card-sub">Your crops appear first, and we tell you when a price reaches your target.</p></div>
+  <a class="btn btn-primary" href="{% url 'signup' %}">Create free account</a>
+</section>
+{% endif %}
 {% endblock %}
 {% block scripts %}{% if chart %}{% include "core/partials/chart_script.html" %}{% endif %}{% endblock %}
